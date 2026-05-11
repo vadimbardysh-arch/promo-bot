@@ -1,0 +1,6 @@
+.DS_Store
+screenshots/
+listing_html_dump.html
+__pycache__/
+*.pyc
+.env
