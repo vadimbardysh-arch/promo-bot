@@ -1,6 +1,24 @@
 # Promo Bot — Setup Guide
 
-Step-by-step instructions to set up the script on your Mac.
+## What is this?
+
+**Promo Bot** is a script that automates promo campaign setup for venues in the Bolt Food Partner Portal.
+
+Instead of manually opening each venue, enabling cohorts, setting dates and clicking buttons — the script does it automatically across all venues at once.
+
+### What it can do:
+
+- **Add venues** to a manager's account via Admin Panel (from a CSV file)
+- **Check** which Smart Promos and Sponsored Listings are available per venue
+- **Activate Smart Promo** on all or specific venues (with cohort and date selection)
+- **Deactivate Smart Promo** on all or specific venues
+- **Generate reports** — what was activated, what was skipped and why
+
+### How it works:
+
+The script opens a browser (Chromium), logs into the Food Partner Portal and automatically clicks through all the necessary buttons — just like a manager would do manually, but in minutes instead of hours.
+
+> ⚠️ **While the script is running — do not click anything in the browser!** It works automatically.
 
 ---
 
