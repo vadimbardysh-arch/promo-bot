@@ -2,6 +2,11 @@
 
 Автоматизація промо-кампаній через Bolt Food Partner Portal.
 
+## 📖 Setup Guide / Інструкція з налаштування
+
+- **[🇺🇦 Українська версія](SETUP_GUIDE.md)**
+- **[🇬🇧 English version](SETUP_GUIDE_EN.md)**
+
 ## Що вміє
 
 | Команда | Опис |
