@@ -1,17 +1,17 @@
 """
-Promo Bot — автоматизація промо-кампаній через Bolt Food Partner Portal.
+Promo Bot — automation of promo campaigns via Bolt Food Partner Portal.
 
-Phase 1: Додавання venues до тестового акаунту через Admin Panel
-Phase 2: Налаштування промо (Smart Promotions, Sponsored Listing) через Food Partner Portal
+Phase 1: Adding venues to the test account via Admin Panel
+Phase 2: Setting up promos (Smart Promotions, Sponsored Listing) via Food Partner Portal
 
-Запуск:
-    # Phase 1: Додати venues з CSV
+Usage:
+    # Phase 1: Add venues from CSV
     python3 promo_bot.py add-venues --csv /path/to/file.csv
 
-    # Phase 2: Smart Promo для всіх venues
+    # Phase 2: Smart Promo for all venues
     python3 promo_bot.py smart-promo --login EMAIL --password PASS
 
-    # Phase 2: Sponsored Listing для всіх venues
+    # Phase 2: Sponsored Listing for all venues
     python3 promo_bot.py listing --login EMAIL --password PASS --start 2026-04-01 --end 2026-04-14
 """
 
@@ -84,14 +84,14 @@ def unique_vendors_by_city(providers: list[dict]) -> dict:
 async def add_vendors(csv_path: str):
     providers = read_providers_csv(csv_path)
     if not providers:
-        print("CSV порожній або не вдалося прочитати дані.")
+        print("CSV is empty or failed to read data.")
         return
 
     by_city = unique_vendors_by_city(providers)
     total = sum(len(v) for v in by_city.values())
 
     print(f"\n{'='*60}")
-    print(f"  Phase 1a: Додавання {total} вендорів до Vendor Permissions")
+    print(f"  Phase 1a: Adding {total} vendors to Vendor Permissions")
     print(f"{'='*60}")
     for city, vendors in by_city.items():
         print(f"  {city}:")
@@ -104,11 +104,11 @@ async def add_vendors(csv_path: str):
         context = await browser.new_context(viewport={"width": 1400, "height": 900})
         page = await context.new_page()
 
-        print(">> Відкриваю Admin Panel...")
-        print(">> Будь ласка, залогінся в Admin Panel.")
-        print(">> Після логіну натисни Enter в терміналі.\n")
+        print(">> Opening Admin Panel...")
+        print(">> Please log in to Admin Panel.")
+        print(">> After logging in, press Enter in the terminal.\n")
         await page.goto(ADMIN_PANEL_ACCOUNT_URL)
-        input("   [Натисни Enter коли залогінишся і бачиш сторінку акаунту] ")
+        input("   [Press Enter when logged in and you see the account page] ")
 
         await page.goto(ADMIN_PANEL_ACCOUNT_URL)
         await page.wait_for_load_state("networkidle")
@@ -119,7 +119,7 @@ async def add_vendors(csv_path: str):
         section_combos = vendor_section.locator("input[role='combobox']")
 
         for city, vendors in by_city.items():
-            print(f"\n>> Місто: {city}")
+            print(f"\n>> City: {city}")
 
             # City — перший combobox
             try:
@@ -133,8 +133,8 @@ async def add_vendors(csv_path: str):
                 await option.click(timeout=5000)
                 print(f"   ✓ City: {city}")
             except Exception as e:
-                print(f"   ⚠ Не вдалося вибрати місто '{city}': {e}")
-                input(f"   [Вибери місто '{city}' вручну і натисни Enter] ")
+                print(f"   ⚠ Failed to select city '{city}': {e}")
+                input(f"   [Select city '{city}' manually and press Enter] ")
             await asyncio.sleep(1)
 
             # Vendor — другий combobox (мультиселект з тегами)
@@ -145,7 +145,7 @@ async def add_vendors(csv_path: str):
 
                 existing = page.get_by_text(tag_text, exact=False)
                 if await existing.count() > 0:
-                    print(f"   ✓ {vname} (id: {vid}) — вже доданий")
+                    print(f"   ✓ {vname} (id: {vid}) — already added")
                     continue
 
                 try:
@@ -157,25 +157,25 @@ async def add_vendors(csv_path: str):
                     await asyncio.sleep(1)
                     exact_option = page.get_by_role("option").filter(has_text=f"(id: {vid})")
                     await exact_option.click(timeout=5000)
-                    print(f"   ✓ {vname} (id: {vid}) — додано")
+                    print(f"   ✓ {vname} (id: {vid}) — added")
                 except Exception as e:
-                    print(f"   ⚠ Не знайшов '{vname}' (id: {vid}): {e}")
-                    input(f"   [Додай '{vname}' вручну і натисни Enter] ")
+                    print(f"   ⚠ Not found '{vname}' (id: {vid}): {e}")
+                    input(f"   [Add '{vname}' manually and press Enter] ")
                 await asyncio.sleep(0.5)
 
         # Зберігаємо
-        print("\n>> Всі вендори додані. Зберігаю...")
+        print("\n>> All vendors added. Saving...")
         save_btn = page.locator("button:has-text('Save'), input[value='Save']").first
         try:
             await save_btn.click(timeout=5000)
             await asyncio.sleep(2)
-            print("   ✓ Збережено!")
+            print("   ✓ Saved!")
         except Exception:
-            print("   ⚠ Не знайшов кнопку Save. Натисни її вручну.")
-            input("   [Натисни Save вручну і потім Enter] ")
+            print("   ⚠ Save button not found. Press it manually.")
+            input("   [Press Save manually then press Enter] ")
 
         print(f"\n{'='*60}")
-        print(f"  Phase 1a завершена! Додано {total} вендорів.")
+        print(f"  Phase 1a complete! Added {total} vendors.")
         print(f"{'='*60}\n")
 
         await browser.close()
@@ -188,17 +188,17 @@ async def add_vendors(csv_path: str):
 async def add_venues(csv_path: str):
     providers = read_providers_csv(csv_path)
     if not providers:
-        print("CSV порожній або не вдалося прочитати дані.")
+        print("CSV is empty or failed to read data.")
         return
 
     groups = group_by_city_vendor(providers)
     total = len(providers)
 
     print(f"\n{'='*60}")
-    print(f"  Phase 1: Додавання {total} провайдерів до Admin Panel")
+    print(f"  Phase 1: Adding {total} providers to Admin Panel")
     print(f"{'='*60}")
     for (city, vendor), items in groups.items():
-        print(f"  {city} → {vendor}: {len(items)} провайдерів")
+        print(f"  {city} → {vendor}: {len(items)} providers")
         for p in items:
             print(f"    - {p['provider_name']} (id: {p['provider_id']})")
     print(f"{'='*60}\n")
@@ -211,11 +211,11 @@ async def add_venues(csv_path: str):
         page = await context.new_page()
 
         # Крок 1: Користувач логіниться вручну
-        print(">> Відкриваю Admin Panel...")
-        print(">> Будь ласка, залогінся в Admin Panel.")
-        print(">> Після логіну натисни Enter в терміналі.\n")
+        print(">> Opening Admin Panel...")
+        print(">> Please log in to Admin Panel.")
+        print(">> After logging in, press Enter in the terminal.\n")
         await page.goto(ADMIN_PANEL_ACCOUNT_URL)
-        input("   [Натисни Enter коли залогінишся і бачиш сторінку акаунту] ")
+        input("   [Press Enter when logged in and you see the account page] ")
 
         # Крок 2: Переходимо на сторінку акаунту (на випадок якщо редірект)
         await page.goto(ADMIN_PANEL_ACCOUNT_URL)
@@ -230,7 +230,7 @@ async def add_venues(csv_path: str):
 
         for (city, vendor), items in groups.items():
             vendor_id = items[0]["vendor_id"]
-            print(f"\n>> Додаю провайдерів: {city} → {vendor} (id: {vendor_id})")
+            print(f"\n>> Adding providers: {city} → {vendor} (id: {vendor_id})")
 
             # City — перший combobox в секції Provider Permissions
             try:
@@ -244,8 +244,8 @@ async def add_venues(csv_path: str):
                 await option.click(timeout=5000)
                 print(f"   ✓ City: {city}")
             except Exception as e:
-                print(f"   ⚠ Не вдалося вибрати місто '{city}' автоматично: {e}")
-                input(f"   [Вибери місто '{city}' вручну і натисни Enter] ")
+                print(f"   ⚠ Failed to select city '{city}' automatically: {e}")
+                input(f"   [Select city '{city}' manually and press Enter] ")
             await asyncio.sleep(1)
 
             # Vendor — другий combobox; матчимо по vendor_id з CSV
@@ -261,8 +261,8 @@ async def add_venues(csv_path: str):
                 await exact_option.click(timeout=5000)
                 print(f"   ✓ Vendor: {vendor} (id: {vendor_id})")
             except Exception as e:
-                print(f"   ⚠ Не вдалося вибрати вендора '{vendor}' (id: {vendor_id}): {e}")
-                input(f"   [Вибери вендора '{vendor}' вручну і натисни Enter] ")
+                print(f"   ⚠ Failed to select vendor '{vendor}' (id: {vendor_id}): {e}")
+                input(f"   [Select vendor '{vendor}' manually and press Enter] ")
             await asyncio.sleep(1)
 
             # Provider Permissions — третій combobox (мультиселект з тегами)
@@ -273,7 +273,7 @@ async def add_venues(csv_path: str):
 
                 existing = page.get_by_text(tag_text, exact=False)
                 if await existing.count() > 0:
-                    print(f"   ✓ {provider_name} — вже доданий")
+                    print(f"   ✓ {provider_name} — already added")
                     continue
 
                 try:
@@ -285,25 +285,25 @@ async def add_venues(csv_path: str):
                     await asyncio.sleep(1)
                     option = page.get_by_role("option", name=provider_name).first
                     await option.click(timeout=5000)
-                    print(f"   ✓ {provider_name} — додано")
+                    print(f"   ✓ {provider_name} — added")
                 except Exception as e:
-                    print(f"   ⚠ Не знайшов '{provider_name}': {e}")
-                    input(f"   [Додай '{provider_name}' вручну і натисни Enter] ")
+                    print(f"   ⚠ Not found '{provider_name}': {e}")
+                    input(f"   [Add '{provider_name}' manually and press Enter] ")
                 await asyncio.sleep(0.5)
 
         # Крок 4: Зберігаємо
-        print("\n>> Всі провайдери додані. Зберігаю...")
+        print("\n>> All providers added. Saving...")
         save_btn = page.locator("button:has-text('Save'), input[value='Save']").first
         try:
             await save_btn.click(timeout=5000)
             await asyncio.sleep(2)
-            print("   ✓ Збережено!")
+            print("   ✓ Saved!")
         except Exception:
-            print("   ⚠ Не знайшов кнопку Save. Натисни її вручну.")
-            input("   [Натисни Save вручну і потім Enter] ")
+            print("   ⚠ Save button not found. Press it manually.")
+            input("   [Press Save manually then press Enter] ")
 
         print(f"\n{'='*60}")
-        print(f"  Phase 1 завершена! Додано {total} провайдерів.")
+        print(f"  Phase 1 complete! Added {total} providers.")
         print(f"{'='*60}\n")
 
         await browser.close()
@@ -348,7 +348,7 @@ async def handle_error_page(page):
     # "Oops, something went wrong" → натиснути "Try again"
     try_again = page.locator("button:has-text('Try again'), button:has-text('Спробувати')")
     if await try_again.count() > 0:
-        print("   ↻ Помилка сторінки — натискаю Try again...")
+        print("   ↻ Page error — clicking Try again...")
         await try_again.first.click()
         await page.wait_for_load_state("networkidle")
         await asyncio.sleep(3)
@@ -360,7 +360,7 @@ async def handle_error_page(page):
 async def ensure_logged_in(page, login: str, password: str):
     """Перевіряє чи ми залогінені. Якщо ні — логіниться заново."""
     if "/login" in page.url:
-        print("   ↻ Сесія закінчилась — логінюсь заново...")
+        print("   ↻ Session expired — re-logging in...")
         await login_food_partner(page, login, password)
         return True
     return False
@@ -368,7 +368,7 @@ async def ensure_logged_in(page, login: str, password: str):
 
 async def login_food_partner(page, login: str, password: str):
     """Логін в Food Partner Portal з обробкою cookies та welcome dialog."""
-    print("\n>> Логінюсь в Food Partner Portal...")
+    print("\n>> Logging in to Food Partner Portal...")
     await page.goto(FOOD_PARTNER_LOGIN_URL)
     await page.wait_for_load_state("networkidle")
     await asyncio.sleep(2)
@@ -406,15 +406,15 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
         all_venues = await get_all_venues(page)
         if filters:
             venues = [v for v in all_venues if any(f in v for f in filters)]
-            print(f"\n>> Знайдено {len(all_venues)} venues, обрано {len(venues)} за фільтром")
+            print(f"\n>> Found {len(all_venues)} venues, selected {len(venues)} by filter")
         else:
             venues = all_venues
-            print(f"\n>> Знайдено {len(venues)} venues")
+            print(f"\n>> Found {len(venues)} venues")
 
         report = []
 
         for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] Перевірка: {venue_name}")
+            print(f"\n>> [{i+1}/{len(venues)}] Checking: {venue_name}")
 
             await ensure_logged_in(page, login, password)
             await handle_error_page(page)
@@ -434,8 +434,8 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                     await handle_error_page(page)
                     await switch_venue(page, venue_name)
                 except Exception:
-                    print(f"   ⚠ Не вдалося перейти — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "cohorts": [], "reason": "Не вдалося перейти на venue"})
+                    print(f"   ⚠ Failed to switch venue — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "cohorts": [], "reason": "Failed to switch venue"})
                     continue
 
             await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
@@ -448,8 +448,8 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
             active_promo = page.get_by_text("Custom smart promotion", exact=False)
             active_badge = page.locator("text=Active")
             if await active_promo.count() > 0 and await active_badge.count() > 0:
-                print(f"   ● Smart Promo вже АКТИВНЕ")
-                report.append({"venue": venue_name, "status": "АКТИВНЕ", "cohorts": [], "reason": "Smart Promo вже підключено"})
+                print(f"   ● Smart Promo already ACTIVE")
+                report.append({"venue": venue_name, "status": "ACTIVE", "cohorts": [], "reason": "Smart Promo already connected"})
                 continue
 
             # Пробуємо зайти в налаштування Smart Promo
@@ -479,8 +479,8 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                     await asyncio.sleep(3)
 
             if not entered:
-                print(f"   ✕ Smart Promo НЕДОСТУПНЕ")
-                report.append({"venue": venue_name, "status": "НЕДОСТУПНЕ", "cohorts": [], "reason": "Немає кнопки Create plan / Get started"})
+                print(f"   ✕ Smart Promo UNAVAILABLE")
+                report.append({"venue": venue_name, "status": "UNAVAILABLE", "cohorts": [], "reason": "No Create plan / Get started button"})
                 continue
 
             # Зчитуємо когорти
@@ -495,8 +495,8 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
             toggle_count = await toggles.count()
 
             if toggle_count == 0:
-                print(f"   ✕ Когорти не знайдено")
-                report.append({"venue": venue_name, "status": "НЕДОСТУПНЕ", "cohorts": [], "reason": "Когорти не знайдено"})
+                print(f"   ✕ Cohorts not found")
+                report.append({"venue": venue_name, "status": "UNAVAILABLE", "cohorts": [], "reason": "Cohorts not found"})
                 continue
 
             cohort_names = []
@@ -513,51 +513,51 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                         break
                 cohort_names.append(name)
 
-            print(f"   ✓ Доступно {toggle_count} когорт: {', '.join(cohort_names)}")
-            report.append({"venue": venue_name, "status": "ДОСТУПНЕ", "cohorts": cohort_names, "reason": ""})
+            print(f"   ✓ Available {toggle_count} cohorts: {', '.join(cohort_names)}")
+            report.append({"venue": venue_name, "status": "AVAILABLE", "cohorts": cohort_names, "reason": ""})
 
             # Повертаємось назад (не зберігаємо нічого)
             await page.go_back()
             await asyncio.sleep(2)
 
         # Звіт
-        available = [r for r in report if r["status"] == "ДОСТУПНЕ"]
-        active = [r for r in report if r["status"] == "АКТИВНЕ"]
-        unavailable = [r for r in report if r["status"] == "НЕДОСТУПНЕ"]
-        errors = [r for r in report if r["status"] == "ПОМИЛКА"]
+        available = [r for r in report if r["status"] == "AVAILABLE"]
+        active = [r for r in report if r["status"] == "ACTIVE"]
+        unavailable = [r for r in report if r["status"] == "UNAVAILABLE"]
+        errors = [r for r in report if r["status"] == "ERROR"]
 
         print(f"\n{'='*60}")
-        print(f"  ЗВІТ — Перевірка Smart Promo")
+        print(f"  REPORT — Smart Promo Check")
         print(f"{'='*60}")
-        print(f"  Всього venues:   {len(venues)}")
-        print(f"  ✓ Доступне:      {len(available)}")
-        print(f"  ● Вже активне:   {len(active)}")
-        print(f"  ✕ Недоступне:    {len(unavailable)}")
-        print(f"  ⚠ Помилки:       {len(errors)}")
+        print(f"  Total venues:    {len(venues)}")
+        print(f"  ✓ Available:     {len(available)}")
+        print(f"  ● Already active:{len(active)}")
+        print(f"  ✕ Unavailable:   {len(unavailable)}")
+        print(f"  ⚠ Errors:        {len(errors)}")
         print(f"{'='*60}")
 
         if available:
-            print(f"\n  ✓ ДОСТУПНЕ ({len(available)}):")
+            print(f"\n  ✓ AVAILABLE ({len(available)}):")
             for r in available:
                 print(f"    • {r['venue']}")
-                print(f"      Когорти: {', '.join(r['cohorts'])}")
+                print(f"      Cohorts: {', '.join(r['cohorts'])}")
 
         if active:
-            print(f"\n  ● ВЖЕ АКТИВНЕ ({len(active)}):")
+            print(f"\n  ● ALREADY ACTIVE ({len(active)}):")
             for r in active:
                 print(f"    • {r['venue']}")
 
         if unavailable:
-            print(f"\n  ✕ НЕДОСТУПНЕ ({len(unavailable)}):")
+            print(f"\n  ✕ UNAVAILABLE ({len(unavailable)}):")
             for r in unavailable:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         if errors:
-            print(f"\n  ⚠ ПОМИЛКИ ({len(errors)}):")
+            print(f"\n  ⚠ ERRORS ({len(errors)}):")
             for r in errors:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         print(f"\n{'='*60}\n")
         await browser.close()
@@ -580,15 +580,15 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
         all_venues = await get_all_venues(page)
         if filters:
             venues = [v for v in all_venues if any(f in v for f in filters)]
-            print(f"\n>> Знайдено {len(all_venues)} venues, обрано {len(venues)} за фільтром")
+            print(f"\n>> Found {len(all_venues)} venues, selected {len(venues)} by filter")
         else:
             venues = all_venues
-            print(f"\n>> Знайдено {len(venues)} venues")
+            print(f"\n>> Found {len(venues)} venues")
 
         report = []
 
         for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] Перевірка Listing: {venue_name}")
+            print(f"\n>> [{i+1}/{len(venues)}] Checking Listing: {venue_name}")
 
             await ensure_logged_in(page, login, password)
             await handle_error_page(page)
@@ -608,8 +608,8 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                     await handle_error_page(page)
                     await switch_venue(page, venue_name)
                 except Exception:
-                    print(f"   ⚠ Не вдалося перейти — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "listings": [], "reason": "Не вдалося перейти на venue"})
+                    print(f"   ⚠ Failed to switch venue — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "listings": [], "reason": "Failed to switch venue"})
                     continue
 
             await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
@@ -629,7 +629,7 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                 # Структура: div.css-1q8rlr9 > div > span(title) + div > span(Create)
                 title_el = page.locator(f"span.MuiTypography-body-m-accent:has-text('{title_text}')")
                 if await title_el.count() == 0:
-                    return f"{label}: не знайдено"
+                    return f"{label}: not found"
 
                 # Картка = найближчий батьківський div.css-1q8rlr9
                 card = title_el.first.locator("xpath=ancestor::div[contains(@class, 'css-1q8rlr9')]")
@@ -640,7 +640,7 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                 # Знаходимо Create span всередині картки
                 create_span = card.locator("span:has-text('Create')")
                 if await create_span.count() == 0:
-                    return f"{label}: немає кнопки"
+                    return f"{label}: no button"
 
                 url_before = page.url
                 try:
@@ -661,11 +661,11 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                         await asyncio.sleep(2)
                         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                         await asyncio.sleep(1)
-                        return f"{label}: ДОСТУПНЕ"
+                        return f"{label}: AVAILABLE"
                     else:
-                        return f"{label}: НЕДОСТУПНЕ"
+                        return f"{label}: UNAVAILABLE"
                 except Exception:
-                    return f"{label}: НЕДОСТУПНЕ"
+                    return f"{label}: UNAVAILABLE"
 
             listings.append(await check_listing_card(page, "Sponsored Listing on Homepage", "Homepage"))
             listings.append(await check_listing_card(page, "Sponsored Listing in Search", "Search"))
@@ -681,31 +681,31 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                     has_active = True
 
             def colorize_listing(text):
-                """Додає ANSI-кольори: ДОСТУПНЕ=зелений, НЕДОСТУПНЕ=червоний."""
+                """Додає ANSI-кольори: AVAILABLE=зелений, UNAVAILABLE=червоний."""
                 g = "\033[32m"  # green
                 r = "\033[31m"  # red
                 reset = "\033[0m"
-                text = text.replace(": ДОСТУПНЕ", f": {g}ДОСТУПНЕ{reset}")
-                text = text.replace(": НЕДОСТУПНЕ", f": {r}НЕДОСТУПНЕ{reset}")
-                text = text.replace(": не знайдено", f": {r}не знайдено{reset}")
+                text = text.replace(": AVAILABLE", f": {g}AVAILABLE{reset}")
+                text = text.replace(": UNAVAILABLE", f": {r}UNAVAILABLE{reset}")
+                text = text.replace(": not found", f": {r}not found{reset}")
                 return text
 
-            has_any_available = any(": ДОСТУПНЕ" in l for l in listings)
+            has_any_available = any(": AVAILABLE" in l for l in listings)
 
             if has_active:
-                print(f"   ● Sponsored Listing вже АКТИВНЕ")
+                print(f"   ● Sponsored Listing already ACTIVE")
                 if listings:
                     print(f"     {colorize_listing(' | '.join(listings))}")
-                report.append({"venue": venue_name, "status": "АКТИВНЕ", "listings": listings, "reason": "Sponsored Listing вже підключено"})
+                report.append({"venue": venue_name, "status": "ACTIVE", "listings": listings, "reason": "Sponsored Listing already connected"})
             elif has_any_available:
                 print(f"   ✓ {colorize_listing(' | '.join(listings))}")
-                report.append({"venue": venue_name, "status": "ДОСТУПНЕ", "listings": listings, "reason": ""})
+                report.append({"venue": venue_name, "status": "AVAILABLE", "listings": listings, "reason": ""})
             elif listings:
                 print(f"   ✕ {colorize_listing(' | '.join(listings))}")
-                report.append({"venue": venue_name, "status": "НЕДОСТУПНЕ", "listings": listings, "reason": "Всі типи Listing недоступні"})
+                report.append({"venue": venue_name, "status": "UNAVAILABLE", "listings": listings, "reason": "All Listing types unavailable"})
             else:
-                print(f"   \033[31m✕ Секція Sponsored Listing не знайдена\033[0m")
-                report.append({"venue": venue_name, "status": "НЕДОСТУПНЕ", "listings": [], "reason": "Секція Sponsored Listing не знайдена"})
+                print(f"   \033[31m✕ Sponsored Listing section not found\033[0m")
+                report.append({"venue": venue_name, "status": "UNAVAILABLE", "listings": [], "reason": "Sponsored Listing section not found"})
 
         # Звіт
         g = "\033[32m"
@@ -714,46 +714,46 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
         b = "\033[1m"
         reset = "\033[0m"
 
-        available = [rec for rec in report if rec["status"] == "ДОСТУПНЕ"]
-        active = [rec for rec in report if rec["status"] == "АКТИВНЕ"]
-        unavailable = [rec for rec in report if rec["status"] == "НЕДОСТУПНЕ"]
-        errors = [rec for rec in report if rec["status"] == "ПОМИЛКА"]
+        available = [rec for rec in report if rec["status"] == "AVAILABLE"]
+        active = [rec for rec in report if rec["status"] == "ACTIVE"]
+        unavailable = [rec for rec in report if rec["status"] == "UNAVAILABLE"]
+        errors = [rec for rec in report if rec["status"] == "ERROR"]
 
         def color_listings(items):
             colored = []
             for item in items:
-                if ": ДОСТУПНЕ" in item:
-                    colored.append(item.replace(": ДОСТУПНЕ", f": {g}ДОСТУПНЕ{reset}"))
-                elif ": НЕДОСТУПНЕ" in item:
-                    colored.append(item.replace(": НЕДОСТУПНЕ", f": {r}НЕДОСТУПНЕ{reset}"))
-                elif ": не знайдено" in item:
-                    colored.append(item.replace(": не знайдено", f": {r}не знайдено{reset}"))
+                if ": AVAILABLE" in item:
+                    colored.append(item.replace(": AVAILABLE", f": {g}AVAILABLE{reset}"))
+                elif ": UNAVAILABLE" in item:
+                    colored.append(item.replace(": UNAVAILABLE", f": {r}UNAVAILABLE{reset}"))
+                elif ": not found" in item:
+                    colored.append(item.replace(": not found", f": {r}not found{reset}"))
                 else:
                     colored.append(item)
             return " | ".join(colored)
 
         print(f"\n{'='*60}")
-        print(f"  {b}ЗВІТ — Перевірка Sponsored Listing{reset}")
+        print(f"  {b}REPORT — Sponsored Listing Check{reset}")
         print(f"{'='*60}")
-        print(f"  Всього venues:   {b}{len(venues)}{reset}")
-        print(f"  {g}✓ Доступне:      {len(available)}{reset}")
-        print(f"  {y}● Вже активне:   {len(active)}{reset}")
-        print(f"  {r}✕ Недоступне:    {len(unavailable)}{reset}")
-        print(f"  {r}⚠ Помилки:       {len(errors)}{reset}")
+        print(f"  Total venues:    {b}{len(venues)}{reset}")
+        print(f"  {g}✓ Available:     {len(available)}{reset}")
+        print(f"  {y}● Already active: {len(active)}{reset}")
+        print(f"  {r}✕ Unavailable:   {len(unavailable)}{reset}")
+        print(f"  {r}⚠ Errors:        {len(errors)}{reset}")
         print(f"{'='*60}")
 
         # Детальний звіт по кожній venue
-        print(f"\n  {b}ДЕТАЛІ ПО КОЖНІЙ VENUE:{reset}\n")
+        print(f"\n  {b}DETAILS PER VENUE:{reset}\n")
         for rec in report:
-            if rec["status"] == "ПОМИЛКА":
+            if rec["status"] == "ERROR":
                 print(f"    {r}⚠{reset} {rec['venue']}")
-                print(f"      {r}Помилка: {rec['reason']}{reset}")
-            elif rec["status"] == "АКТИВНЕ":
+                print(f"      {r}Error: {rec['reason']}{reset}")
+            elif rec["status"] == "ACTIVE":
                 print(f"    {y}●{reset} {rec['venue']}")
                 if rec['listings']:
                     print(f"      {color_listings(rec['listings'])}")
-                print(f"      {y}Вже активне{reset}")
-            elif rec["status"] == "ДОСТУПНЕ":
+                print(f"      {y}Already active{reset}")
+            elif rec["status"] == "AVAILABLE":
                 print(f"    {g}✓{reset} {rec['venue']}")
                 print(f"      {color_listings(rec['listings'])}")
             else:
@@ -804,10 +804,10 @@ async def setup_smart_promo(
         all_venues = await get_all_venues(page)
         if filters:
             venues = [v for v in all_venues if any(f in v for f in filters)]
-            print(f"\n>> Знайдено {len(all_venues)} venues, обрано {len(venues)} за фільтром")
+            print(f"\n>> Found {len(all_venues)} venues, selected {len(venues)} by filter")
         else:
             venues = all_venues
-            print(f"\n>> Знайдено {len(venues)} venues")
+            print(f"\n>> Found {len(venues)} venues")
         for v in venues:
             print(f"   - {v}")
 
@@ -815,7 +815,7 @@ async def setup_smart_promo(
         retry_venues = []
 
         for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] Smart Promo для: {venue_name}")
+            print(f"\n>> [{i+1}/{len(venues)}] Smart Promo for: {venue_name}")
 
             # Перевіряємо логін та помилки сторінки
             await ensure_logged_in(page, login, password)
@@ -824,7 +824,7 @@ async def setup_smart_promo(
             try:
                 await switch_venue(page, venue_name)
             except Exception as e:
-                print(f"   ⚠ Не вдалося перейти на venue — скидаю стан сторінки")
+                print(f"   ⚠ Failed to switch venue — resetting page state")
                 await dismiss_overlays(page)
                 await page.keyboard.press("Escape")
                 await asyncio.sleep(1)
@@ -837,8 +837,8 @@ async def setup_smart_promo(
                     await handle_error_page(page)
                     await switch_venue(page, venue_name)
                 except Exception:
-                    print(f"   ⚠ Повторна спроба теж не вдалась — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": "Не вдалося перейти на venue"})
+                    print(f"   ⚠ Retry also failed — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "reason": "Failed to switch venue"})
                     continue
 
             await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
@@ -889,8 +889,8 @@ async def setup_smart_promo(
                 active_text = page.locator("text=Active")
                 custom_promo = page.get_by_text("Custom smart promotion", exact=False)
                 if await active_text.count() > 0 and await custom_promo.count() > 0:
-                    print(f"   ○ Smart Promo вже активне — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПРОПУЩЕНО", "reason": "Smart Promo вже активне"})
+                    print(f"   ○ Smart Promo already active — skipping")
+                    report.append({"venue": venue_name, "status": "SKIPPED", "reason": "Smart Promo already active"})
                 else:
                     import os
                     screenshots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "screenshots")
@@ -899,8 +899,8 @@ async def setup_smart_promo(
                         await page.screenshot(path=os.path.join(screenshots_dir, f"no_button_{venue_name[:30].replace('/', '_')}.png"), timeout=10000)
                     except Exception:
                         pass
-                    print(f"   ⚠ Smart Promo недоступне — пропускаю (скрін збережено)")
-                    report.append({"venue": venue_name, "status": "ПРОПУЩЕНО", "reason": "Smart Promo недоступне (немає кнопки, скрін збережено)"})
+                    print(f"   ⚠ Smart Promo unavailable — skipping (screenshot saved)")
+                    report.append({"venue": venue_name, "status": "SKIPPED", "reason": "Smart Promo unavailable (no button, screenshot saved)"})
                 continue
 
             # Чекаємо поки toggles з'являться (retry до 15 сек)
@@ -923,11 +923,11 @@ async def setup_smart_promo(
                     await page.screenshot(path=os.path.join(screenshots_dir, f"no_cohorts_{venue_name[:30].replace('/', '_')}.png"), timeout=10000)
                 except Exception:
                     pass
-                print(f"   ⚠ Когорти не знайдено — пропускаю (скрін збережено)")
-                report.append({"venue": venue_name, "status": "ПРОПУЩЕНО", "reason": "Когорти не знайдено (скрін збережено)"})
+                print(f"   ⚠ Cohorts not found — skipping (screenshot saved)")
+                report.append({"venue": venue_name, "status": "SKIPPED", "reason": "Cohorts not found (screenshot saved)"})
                 continue
 
-            print(f"   Знайдено {toggle_count} когорт(и)")
+            print(f"   Found {toggle_count} cohort(s)")
 
             enabled_cohorts = []
 
@@ -959,20 +959,20 @@ async def setup_smart_promo(
                             if is_on != "true":
                                 await toggle_in.click()
                                 await asyncio.sleep(0.5)
-                                print(f"   ✓ '{keyword}' увімкнена")
+                                print(f"   ✓ '{keyword}' enabled")
                                 enabled_cohorts.append(keyword)
                             else:
-                                print(f"   ✓ '{keyword}' вже увімкнена")
-                                enabled_cohorts.append(f"{keyword} (вже була)")
+                                print(f"   ✓ '{keyword}' already enabled")
+                                enabled_cohorts.append(f"{keyword} (was already on)")
                             matched = True
                             found_any = True
                             break
                     if not matched:
-                        print(f"   ⚠ Когорта '{keyword}' не знайдена")
+                        print(f"   ⚠ Cohort '{keyword}' not found")
 
                 if not found_any:
-                    print(f"   ⚠ Жодна з когорт не знайдена — пропускаю venue")
-                    report.append({"venue": venue_name, "status": "ПРОПУЩЕНО", "reason": f"Когорта '{', '.join(cohort_keywords)}' відсутня"})
+                    print(f"   ⚠ None of the cohorts found — skipping venue")
+                    report.append({"venue": venue_name, "status": "SKIPPED", "reason": f"Cohort '{', '.join(cohort_keywords)}' not found"})
                     continue
             else:
                 # Режим "all" або по індексу
@@ -985,16 +985,16 @@ async def setup_smart_promo(
                     if should_enable and is_on != "true":
                         await toggle.click()
                         await asyncio.sleep(0.5)
-                        print(f"   ✓ '{cname}' увімкнена")
+                        print(f"   ✓ '{cname}' enabled")
                         enabled_cohorts.append(cname)
                     elif should_enable and is_on == "true":
-                        print(f"   ✓ '{cname}' вже увімкнена")
-                        enabled_cohorts.append(f"{cname} (вже була)")
+                        print(f"   ✓ '{cname}' already enabled")
+                        enabled_cohorts.append(f"{cname} (was already on)")
                     else:
                         if is_on == "true":
                             await toggle.click()
                             await asyncio.sleep(0.5)
-                            print(f"   ○ '{cname}' вимкнена")
+                            print(f"   ○ '{cname}' disabled")
 
             # Редагуємо розклад (дати)
             # "Edit" може бути <button> або clickable <div>/<span>
@@ -1032,10 +1032,10 @@ async def setup_smart_promo(
                     if await save_btn.count() > 0:
                         await save_btn.click(timeout=5000)
                         await asyncio.sleep(1)
-                    print(f"   ✓ Дати: {start_date} — {end_date}")
+                    print(f"   ✓ Dates: {start_date} — {end_date}")
                 except Exception as e:
-                    print(f"   ⚠ Не вдалося змінити дати: {e}")
-                    input("   [Встанови дати вручну і натисни Enter] ")
+                    print(f"   ⚠ Failed to change dates: {e}")
+                    input("   [Set dates manually and press Enter] ")
 
             # Приймаємо T&C
             await dismiss_overlays(page)
@@ -1063,12 +1063,12 @@ async def setup_smart_promo(
                 # Якщо з'явився діалог "End and replace your ongoing promotion?"
                 end_ongoing = page.locator("button:has-text('End ongoing promotion'), button:has-text('Закінчити поточне')")
                 if await end_ongoing.count() > 0:
-                    print(f"   ↻ Замінюю поточне промо — потрібно повторно налаштувати...")
+                    print(f"   ↻ Replacing current promo — needs re-setup...")
                     await end_ongoing.first.click()
                     await asyncio.sleep(3)
                     await dismiss_overlays(page)
                     retry_venues.append(venue_name)
-                    report.append({"venue": venue_name, "status": "ПОВТОР", "reason": "Замінено поточне промо — буде повторне налаштування"})
+                    report.append({"venue": venue_name, "status": "RETRY", "reason": "Replaced current promo — will retry setup"})
                     continue
 
                 # Закриваємо будь-які діалоги після Schedule
@@ -1086,19 +1086,19 @@ async def setup_smart_promo(
                 )
 
                 cohort_str = ", ".join(enabled_cohorts) if enabled_cohorts else "all"
-                dates_str = f"{start_date} — {end_date}" if start_date and end_date else "за замовчуванням"
+                dates_str = f"{start_date} — {end_date}" if start_date and end_date else "default"
 
                 if is_active:
-                    print(f"   ✓ Smart Promo активовано!")
-                    report.append({"venue": venue_name, "status": "АКТИВОВАНО", "reason": f"Когорти: {cohort_str} | Дати: {dates_str}"})
+                    print(f"   ✓ Smart Promo activated!")
+                    report.append({"venue": venue_name, "status": "ACTIVATED", "reason": f"Cohorts: {cohort_str} | Dates: {dates_str}"})
                 else:
-                    print(f"   ⚠ Промо не підтверджено — додаю в повторний прохід")
+                    print(f"   ⚠ Promo not confirmed — adding to retry pass")
                     retry_venues.append(venue_name)
-                    report.append({"venue": venue_name, "status": "ПОВТОР", "reason": "Schedule натиснуто, але промо не активне — повторна спроба"})
+                    report.append({"venue": venue_name, "status": "RETRY", "reason": "Schedule clicked but promo not active — will retry"})
             except Exception:
-                print(f"   ⚠ 'Schedule promotion' недоступна — перевір вручну")
-                input("   [Перевір і натисни Enter] ")
-                report.append({"venue": venue_name, "status": "ВРУЧНУ", "reason": "Schedule promotion недоступна — потрібна ручна перевірка"})
+                print(f"   ⚠ 'Schedule promotion' unavailable — check manually")
+                input("   [Check and press Enter] ")
+                report.append({"venue": venue_name, "status": "MANUAL", "reason": "Schedule promotion unavailable — needs manual check"})
 
             # Закриваємо діалог підтвердження якщо з'явився
             await dismiss_overlays(page)
@@ -1107,11 +1107,11 @@ async def setup_smart_promo(
         # Повторний прохід для venues де було замінено поточне промо
         if retry_venues:
             print(f"\n{'='*60}")
-            print(f"  Повторний прохід: {len(retry_venues)} venues (після заміни промо)")
+            print(f"  Retry pass: {len(retry_venues)} venues (after promo replacement)")
             print(f"{'='*60}")
 
             for i, venue_name in enumerate(retry_venues):
-                print(f"\n>> [ПОВТОР {i+1}/{len(retry_venues)}] Smart Promo для: {venue_name}")
+                print(f"\n>> [RETRY {i+1}/{len(retry_venues)}] Smart Promo for: {venue_name}")
 
                 await ensure_logged_in(page, login, password)
                 await handle_error_page(page)
@@ -1131,8 +1131,8 @@ async def setup_smart_promo(
                         await handle_error_page(page)
                         await switch_venue(page, venue_name)
                     except Exception:
-                        print(f"   ⚠ Не вдалося перейти — пропускаю")
-                        report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": "Повторний прохід: не вдалося перейти"})
+                        print(f"   ⚠ Failed to switch venue — skipping")
+                        report.append({"venue": venue_name, "status": "ERROR", "reason": "Retry pass: failed to switch venue"})
                         continue
 
                 await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
@@ -1170,8 +1170,8 @@ async def setup_smart_promo(
                         await asyncio.sleep(3)
 
                 if not entered:
-                    print(f"   ⚠ Кнопка не знайдена при повторному проході — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": "Повторний прохід: кнопка не знайдена"})
+                    print(f"   ⚠ Button not found during retry pass — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "reason": "Retry pass: button not found"})
                     continue
 
                 toggles = page.get_by_role("switch")
@@ -1185,8 +1185,8 @@ async def setup_smart_promo(
                 toggle_count = await toggles.count()
 
                 if toggle_count == 0:
-                    print(f"   ⚠ Когорти не знайдено при повторному проході")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": "Повторний прохід: когорти не знайдено"})
+                    print(f"   ⚠ Cohorts not found during retry pass")
+                    report.append({"venue": venue_name, "status": "ERROR", "reason": "Retry pass: cohorts not found"})
                     continue
 
                 enabled_cohorts = []
@@ -1217,7 +1217,7 @@ async def setup_smart_promo(
                                     await asyncio.sleep(0.5)
                                     enabled_cohorts.append(keyword)
                                 else:
-                                    enabled_cohorts.append(f"{keyword} (вже була)")
+                                    enabled_cohorts.append(f"{keyword} (was already on)")
                                 break
                 else:
                     for t in range(toggle_count):
@@ -1230,7 +1230,7 @@ async def setup_smart_promo(
                             await asyncio.sleep(0.5)
                             enabled_cohorts.append(cname)
                         elif should_enable:
-                            enabled_cohorts.append(f"{cname} (вже була)")
+                            enabled_cohorts.append(f"{cname} (was already on)")
 
                 if start_date or end_date:
                     try:
@@ -1278,65 +1278,65 @@ async def setup_smart_promo(
                 try:
                     await schedule_btn.first.click(timeout=5000)
                     await asyncio.sleep(3)
-                    print(f"   ✓ Smart Promo активовано (повторний прохід)!")
+                    print(f"   ✓ Smart Promo activated (retry pass)!")
                     cohort_str = ", ".join(enabled_cohorts) if enabled_cohorts else "all"
-                    dates_str = f"{start_date} — {end_date}" if start_date and end_date else "за замовчуванням"
-                    # Видаляємо попередній запис ПОВТОР
-                    report[:] = [r for r in report if not (r["venue"] == venue_name and r["status"] == "ПОВТОР")]
-                    report.append({"venue": venue_name, "status": "АКТИВОВАНО", "reason": f"Когорти: {cohort_str} | Дати: {dates_str} (після заміни)"})
+                    dates_str = f"{start_date} — {end_date}" if start_date and end_date else "default"
+                    # Видаляємо попередній запис RETRY
+                    report[:] = [r for r in report if not (r["venue"] == venue_name and r["status"] == "RETRY")]
+                    report.append({"venue": venue_name, "status": "ACTIVATED", "reason": f"Cohorts: {cohort_str} | Dates: {dates_str} (after replacement)"})
                 except Exception:
-                    print(f"   ⚠ Не вдалося активувати — перевір вручну")
-                    input("   [Перевір і натисни Enter] ")
+                    print(f"   ⚠ Failed to activate — check manually")
+                    input("   [Check and press Enter] ")
 
                 await dismiss_overlays(page)
                 await asyncio.sleep(1)
 
         # Звіт
-        activated = [r for r in report if r["status"] == "АКТИВОВАНО"]
-        skipped = [r for r in report if r["status"] == "ПРОПУЩЕНО"]
-        errors = [r for r in report if r["status"] == "ПОМИЛКА"]
-        manual = [r for r in report if r["status"] == "ВРУЧНУ"]
+        activated = [r for r in report if r["status"] == "ACTIVATED"]
+        skipped = [r for r in report if r["status"] == "SKIPPED"]
+        errors = [r for r in report if r["status"] == "ERROR"]
+        manual = [r for r in report if r["status"] == "MANUAL"]
 
         print(f"\n{'='*60}")
-        print(f"  ЗВІТ — Smart Promo")
+        print(f"  REPORT — Smart Promo")
         print(f"{'='*60}")
-        print(f"  Всього venues: {len(venues)}")
-        print(f"  ✓ Активовано:  {len(activated)}")
-        print(f"  ○ Пропущено:   {len(skipped)}")
-        print(f"  ✋ Вручну:      {len(manual)}")
-        print(f"  ✕ Помилки:     {len(errors)}")
+        print(f"  Total venues:  {len(venues)}")
+        print(f"  ✓ Activated:   {len(activated)}")
+        print(f"  ○ Skipped:     {len(skipped)}")
+        print(f"  ✋ Manual:      {len(manual)}")
+        print(f"  ✕ Errors:      {len(errors)}")
         print(f"{'='*60}")
 
         if activated:
-            print(f"\n  ✓ АКТИВОВАНО ({len(activated)}):")
+            print(f"\n  ✓ ACTIVATED ({len(activated)}):")
             for r in activated:
                 print(f"    • {r['venue']}")
                 print(f"      {r['reason']}")
 
         if skipped:
-            print(f"\n  ○ ПРОПУЩЕНО ({len(skipped)}):")
+            print(f"\n  ○ SKIPPED ({len(skipped)}):")
             for r in skipped:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         if manual:
-            print(f"\n  ✋ ВРУЧНУ ({len(manual)}):")
+            print(f"\n  ✋ MANUAL ({len(manual)}):")
             for r in manual:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         if errors:
-            print(f"\n  ✕ ПОМИЛКИ ({len(errors)}):")
+            print(f"\n  ✕ ERRORS ({len(errors)}):")
             for r in errors:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         not_in_report = set(venues) - {r["venue"] for r in report}
         if not_in_report:
-            print(f"\n  ? НЕ ОБРОБЛЕНО ({len(not_in_report)}):")
+            print(f"\n  ? NOT PROCESSED ({len(not_in_report)}):")
             for v in not_in_report:
                 print(f"    • {v}")
-                print(f"      Причина: вже активне або пропущено без помітки")
+                print(f"      Reason: already active or skipped without marking")
 
         print(f"\n{'='*60}\n")
         await browser.close()
@@ -1355,10 +1355,10 @@ async def setup_listing(login: str, password: str, start_date: str = None, end_d
         await login_food_partner(page, login, password)
 
         venues = await get_all_venues(page)
-        print(f"\n>> Знайдено {len(venues)} venues")
+        print(f"\n>> Found {len(venues)} venues")
 
         for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] Sponsored Listing для: {venue_name}")
+            print(f"\n>> [{i+1}/{len(venues)}] Sponsored Listing for: {venue_name}")
             await switch_venue(page, venue_name)
 
             await page.locator("a:has-text('Promotions')").click()
@@ -1368,7 +1368,7 @@ async def setup_listing(login: str, password: str, start_date: str = None, end_d
             # Знаходимо кнопку "Create" саме для Sponsored Listing
             listing_text = page.locator("text=Run Sponsored Listing in Search results")
             if await listing_text.count() == 0:
-                print(f"   ⚠ Sponsored Listing не доступний — пропускаю")
+                print(f"   ⚠ Sponsored Listing not available — skipping")
                 continue
 
             # Кнопка Create знаходиться в тому ж контейнері
@@ -1381,8 +1381,8 @@ async def setup_listing(login: str, password: str, start_date: str = None, end_d
                 await create_btn.first.click(timeout=5000)
                 await asyncio.sleep(5)
             except Exception:
-                print(f"   ⚠ Не вдалося натиснути 'Create' для Sponsored Listing")
-                input("   [Натисни 'Create' вручну і натисни Enter] ")
+                print(f"   ⚠ Failed to click 'Create' for Sponsored Listing")
+                input("   [Click 'Create' manually and press Enter] ")
 
             # Сторінка "Run Sponsored Listing"
             # Редагуємо дати
@@ -1406,9 +1406,9 @@ async def setup_listing(login: str, password: str, start_date: str = None, end_d
                         await end_input.type(end_date, delay=30)
 
                     await asyncio.sleep(1)
-                    print(f"   ✓ Дати: {start_date} — {end_date}")
+                    print(f"   ✓ Dates: {start_date} — {end_date}")
                 except Exception as e:
-                    print(f"   ⚠ Не вдалося змінити дати: {e}")
+                    print(f"   ⚠ Failed to change dates: {e}")
 
             # Приймаємо T&C
             tc = page.locator("input[type='checkbox']")
@@ -1423,13 +1423,13 @@ async def setup_listing(login: str, password: str, start_date: str = None, end_d
             try:
                 await launch_btn.click(timeout=5000)
                 await asyncio.sleep(3)
-                print(f"   ✓ Sponsored Listing запущено!")
+                print(f"   ✓ Sponsored Listing launched!")
             except Exception:
-                print(f"   ⚠ 'Launch Sponsored Listing' недоступна — перевір вручну")
-                input("   [Перевір і натисни Enter] ")
+                print(f"   ⚠ 'Launch Sponsored Listing' unavailable — check manually")
+                input("   [Check and press Enter] ")
 
         print(f"\n{'='*60}")
-        print(f"  Sponsored Listing налаштування завершено!")
+        print(f"  Sponsored Listing setup complete!")
         print(f"{'='*60}\n")
         await browser.close()
 
@@ -1450,15 +1450,15 @@ async def end_promo(login: str, password: str, filters: str = None):
         if filters:
             filter_parts = [f.strip() for f in filters.split(",")]
             venues = [v for v in all_venues if any(f in v for f in filter_parts)]
-            print(f"\n>> Знайдено {len(all_venues)} venues, обрано {len(venues)} за фільтром")
+            print(f"\n>> Found {len(all_venues)} venues, selected {len(venues)} by filter")
         else:
             venues = all_venues
-            print(f"\n>> Знайдено {len(venues)} venues")
+            print(f"\n>> Found {len(venues)} venues")
 
         report = []
 
         for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] End Promo для: {venue_name}")
+            print(f"\n>> [{i+1}/{len(venues)}] End Promo for: {venue_name}")
 
             try:
                 await ensure_logged_in(page, login, password)
@@ -1486,8 +1486,8 @@ async def end_promo(login: str, password: str, filters: str = None):
                 # Шукаємо саме "Custom smart promotion" — інші промо не чіпаємо
                 smart_promo = page.get_by_text("Custom smart promotion", exact=False)
                 if await smart_promo.count() == 0:
-                    print(f"   ○ Немає Smart Promo — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПРОПУЩЕНО", "reason": "Smart Promo не знайдено (можливо інші промо активні)"})
+                    print(f"   ○ No Smart Promo — skipping")
+                    report.append({"venue": venue_name, "status": "SKIPPED", "reason": "Smart Promo not found (other promos may be active)"})
                     continue
 
                 await smart_promo.first.click(timeout=5000)
@@ -1521,8 +1521,8 @@ async def end_promo(login: str, password: str, filters: str = None):
                         row = end_el.locator("xpath=..")
                         dates_info = (await row.inner_text()).strip().replace("\n", " ")
 
-                cohorts_str = ", ".join(cohorts_info) if cohorts_info else "не визначено"
-                print(f"   Когорти: {cohorts_str}")
+                cohorts_str = ", ".join(cohorts_info) if cohorts_info else "not determined"
+                print(f"   Cohorts: {cohorts_str}")
                 if dates_info:
                     print(f"   {dates_info}")
 
@@ -1533,8 +1533,8 @@ async def end_promo(login: str, password: str, filters: str = None):
 
                 end_btn = page.locator("button:has-text('End promotion'), button:has-text('Завершити промоакцію')")
                 if await end_btn.count() == 0:
-                    print(f"   ⚠ Кнопка 'End promotion' не знайдена — пропускаю")
-                    report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": "Кнопка End promotion не знайдена"})
+                    print(f"   ⚠ 'End promotion' button not found — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "reason": "End promotion button not found"})
                     continue
 
                 await end_btn.first.scroll_into_view_if_needed()
@@ -1549,62 +1549,62 @@ async def end_promo(login: str, password: str, filters: str = None):
                 try:
                     await confirm_btn.last.click(timeout=10000)
                     await asyncio.sleep(3)
-                    print(f"   ✓ Промо вимкнено!")
-                    detail = f"Когорти: {cohorts_str}"
+                    print(f"   ✓ Promo disabled!")
+                    detail = f"Cohorts: {cohorts_str}"
                     if dates_info:
                         detail += f" | {dates_info}"
-                    report.append({"venue": venue_name, "status": "ВИМКНЕНО", "reason": detail})
+                    report.append({"venue": venue_name, "status": "DISABLED", "reason": detail})
                 except Exception:
-                    print(f"   ⚠ Не вдалося підтвердити — перевір вручну")
-                    input("   [Перевір і натисни Enter] ")
-                    report.append({"venue": venue_name, "status": "ВРУЧНУ", "reason": f"Когорти: {cohorts_str} — потрібне ручне підтвердження"})
+                    print(f"   ⚠ Failed to confirm — check manually")
+                    input("   [Check and press Enter] ")
+                    report.append({"venue": venue_name, "status": "MANUAL", "reason": f"Cohorts: {cohorts_str} — needs manual confirmation"})
 
                 await dismiss_overlays(page)
                 await asyncio.sleep(1)
 
             except Exception as e:
-                print(f"   ⚠ Помилка: {str(e)[:80]} — пропускаю")
-                report.append({"venue": venue_name, "status": "ПОМИЛКА", "reason": str(e)[:120]})
+                print(f"   ⚠ Error: {str(e)[:80]} — skipping")
+                report.append({"venue": venue_name, "status": "ERROR", "reason": str(e)[:120]})
                 await dismiss_overlays(page)
                 await asyncio.sleep(1)
 
         # Звіт
-        ended = [r for r in report if r["status"] == "ВИМКНЕНО"]
-        skipped = [r for r in report if r["status"] == "ПРОПУЩЕНО"]
-        errors = [r for r in report if r["status"] == "ПОМИЛКА"]
-        manual = [r for r in report if r["status"] == "ВРУЧНУ"]
+        ended = [r for r in report if r["status"] == "DISABLED"]
+        skipped = [r for r in report if r["status"] == "SKIPPED"]
+        errors = [r for r in report if r["status"] == "ERROR"]
+        manual = [r for r in report if r["status"] == "MANUAL"]
 
         print(f"\n{'='*60}")
-        print(f"  ЗВІТ — End Promo")
+        print(f"  REPORT — End Promo")
         print(f"{'='*60}")
-        print(f"  Всього venues: {len(venues)}")
-        print(f"  ✓ Вимкнено:    {len(ended)}")
-        print(f"  ○ Пропущено:   {len(skipped)}")
-        print(f"  ✋ Вручну:      {len(manual)}")
-        print(f"  ✕ Помилки:     {len(errors)}")
+        print(f"  Total venues:  {len(venues)}")
+        print(f"  ✓ Disabled:    {len(ended)}")
+        print(f"  ○ Skipped:     {len(skipped)}")
+        print(f"  ✋ Manual:      {len(manual)}")
+        print(f"  ✕ Errors:      {len(errors)}")
         print(f"{'='*60}")
 
         if ended:
-            print(f"\n  ✓ ВИМКНЕНО ({len(ended)}):")
+            print(f"\n  ✓ DISABLED ({len(ended)}):")
             for r in ended:
                 print(f"    • {r['venue']}")
 
         if skipped:
-            print(f"\n  ○ ПРОПУЩЕНО ({len(skipped)}):")
+            print(f"\n  ○ SKIPPED ({len(skipped)}):")
             for r in skipped:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         if manual:
-            print(f"\n  ✋ ВРУЧНУ ({len(manual)}):")
+            print(f"\n  ✋ MANUAL ({len(manual)}):")
             for r in manual:
                 print(f"    • {r['venue']}")
 
         if errors:
-            print(f"\n  ✕ ПОМИЛКИ ({len(errors)}):")
+            print(f"\n  ✕ ERRORS ({len(errors)}):")
             for r in errors:
                 print(f"    • {r['venue']}")
-                print(f"      Причина: {r['reason']}")
+                print(f"      Reason: {r['reason']}")
 
         print(f"\n{'='*60}\n")
         await browser.close()
@@ -1666,7 +1666,7 @@ async def switch_venue(page, venue_name: str):
         await asyncio.sleep(3)
     else:
         await page.keyboard.press("Escape")
-        raise Exception(f"Venue '{venue_name}' не знайдено в меню")
+        raise Exception(f"Venue '{venue_name}' not found in menu")
 
 
 # ---------------------------------------------------------------------------
@@ -1674,56 +1674,56 @@ async def switch_venue(page, venue_name: str):
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Promo Bot — автоматизація промо Bolt Food")
+    parser = argparse.ArgumentParser(description="Promo Bot — Bolt Food promo automation")
     subparsers = parser.add_subparsers(dest="command")
 
     # add-vendors (швидкий — тільки вендори)
-    p_vendors = subparsers.add_parser("add-vendors", help="Додати вендорів через Admin Panel (швидкий)")
-    p_vendors.add_argument("--csv", required=True, help="Шлях до CSV файлу")
+    p_vendors = subparsers.add_parser("add-vendors", help="Add vendors via Admin Panel (fast)")
+    p_vendors.add_argument("--csv", required=True, help="Path to CSV file")
 
     # add-venues (детальний — провайдери)
-    p_venues = subparsers.add_parser("add-venues", help="Додати venues через Admin Panel (детальний)")
-    p_venues.add_argument("--csv", required=True, help="Шлях до CSV файлу з провайдерами")
+    p_venues = subparsers.add_parser("add-venues", help="Add venues via Admin Panel (detailed)")
+    p_venues.add_argument("--csv", required=True, help="Path to CSV file with providers")
 
     # check-promo
-    p_check = subparsers.add_parser("check-promo", help="Перевірити які Smart Promo доступні кожній venue")
-    p_check.add_argument("--login", required=True, help="Email для Food Partner Portal")
-    p_check.add_argument("--password", required=True, help="Пароль")
-    p_check.add_argument("--venues", default=None, help="Фільтр venues (частини назв через кому)")
+    p_check = subparsers.add_parser("check-promo", help="Check which Smart Promos are available per venue")
+    p_check.add_argument("--login", required=True, help="Email for Food Partner Portal")
+    p_check.add_argument("--password", required=True, help="Password")
+    p_check.add_argument("--venues", default=None, help="Filter venues (name parts comma-separated)")
 
     # check-listing
-    p_check_l = subparsers.add_parser("check-listing", help="Перевірити які Sponsored Listing доступні кожній venue")
-    p_check_l.add_argument("--login", required=True, help="Email для Food Partner Portal")
-    p_check_l.add_argument("--password", required=True, help="Пароль")
-    p_check_l.add_argument("--venues", default=None, help="Фільтр venues (частини назв через кому)")
+    p_check_l = subparsers.add_parser("check-listing", help="Check which Sponsored Listings are available per venue")
+    p_check_l.add_argument("--login", required=True, help="Email for Food Partner Portal")
+    p_check_l.add_argument("--password", required=True, help="Password")
+    p_check_l.add_argument("--venues", default=None, help="Filter venues (name parts comma-separated)")
 
     # smart-promo
-    p_smart = subparsers.add_parser("smart-promo", help="Налаштувати Smart Promotions")
-    p_smart.add_argument("--login", required=True, help="Email для Food Partner Portal")
-    p_smart.add_argument("--password", required=True, help="Пароль")
-    p_smart.add_argument("--start", default=None, help="Дата початку (DD/MM/YYYY)")
-    p_smart.add_argument("--end", default=None, help="Дата закінчення (DD/MM/YYYY)")
+    p_smart = subparsers.add_parser("smart-promo", help="Set up Smart Promotions")
+    p_smart.add_argument("--login", required=True, help="Email for Food Partner Portal")
+    p_smart.add_argument("--password", required=True, help="Password")
+    p_smart.add_argument("--start", default=None, help="Start date (DD/MM/YYYY)")
+    p_smart.add_argument("--end", default=None, help="End date (DD/MM/YYYY)")
     p_smart.add_argument(
         "--cohorts", default="all",
-        help="Когорти: 'all' (усі) або номери через кому '1,3' (1=Нові, 2=Давно не замовляли, 3=Активні, 4=Великий чек)",
+        help="Cohorts: 'all' (all) or numbers comma-separated '1,3' (1=New, 2=Lapsed, 3=Active, 4=High spenders)",
     )
     p_smart.add_argument(
         "--venues", default=None,
-        help="Фільтр venues: частини назв через кому, напр. 'Грушевського,Валова,Костомарова'",
+        help="Filter venues: name parts comma-separated, e.g. 'Грушевського,Валова,Костомарова'",
     )
 
     # end-promo
-    p_end = subparsers.add_parser("end-promo", help="Вимкнути активні Smart Promotions")
-    p_end.add_argument("--login", required=True, help="Email для Food Partner Portal")
-    p_end.add_argument("--password", required=True, help="Пароль")
-    p_end.add_argument("--venues", default=None, help="Фільтр venues (частини назв через кому)")
+    p_end = subparsers.add_parser("end-promo", help="Disable active Smart Promotions")
+    p_end.add_argument("--login", required=True, help="Email for Food Partner Portal")
+    p_end.add_argument("--password", required=True, help="Password")
+    p_end.add_argument("--venues", default=None, help="Filter venues (name parts comma-separated)")
 
     # listing
-    p_listing = subparsers.add_parser("listing", help="Запустити Sponsored Listing")
-    p_listing.add_argument("--login", required=True, help="Email для Food Partner Portal")
-    p_listing.add_argument("--password", required=True, help="Пароль")
-    p_listing.add_argument("--start", default=None, help="Дата початку (DD/MM/YYYY)")
-    p_listing.add_argument("--end", default=None, help="Дата закінчення (DD/MM/YYYY)")
+    p_listing = subparsers.add_parser("listing", help="Launch Sponsored Listing")
+    p_listing.add_argument("--login", required=True, help="Email for Food Partner Portal")
+    p_listing.add_argument("--password", required=True, help="Password")
+    p_listing.add_argument("--start", default=None, help="Start date (DD/MM/YYYY)")
+    p_listing.add_argument("--end", default=None, help="End date (DD/MM/YYYY)")
 
     args = parser.parse_args()
 
