@@ -20,6 +20,22 @@ The script opens a browser (Chromium), logs into the Food Partner Portal and aut
 
 > ⚠️ **While the script is running — do not click anything in the browser!** It works automatically.
 
+### Workflow (step by step):
+
+```
+1. Download CSV from Looker (list of venues)
+         ↓
+2. Add venues to portal via Admin Panel (add-vendors)
+         ↓
+3. Check which promos are available (check-promo / check-listing)
+         ↓
+4. Activate promos (smart-promo)
+         ↓
+5. When needed — deactivate promos (end-promo)
+```
+
+> First **preparation** (steps 1-2), then **verification** (step 3), and only then **launch promos** (step 4).
+
 ---
 
 ## Step 1: Install Python
