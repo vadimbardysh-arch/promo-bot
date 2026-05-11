@@ -126,10 +126,32 @@ python3 promo_bot.py end-promo --login EMAIL --password PASS
 ### Add venues via Admin Panel
 
 ```
-python3 promo_bot.py add-vendors --csv /path/to/file.csv
+python3 promo_bot.py add-vendors --csv venues.csv
 ```
 
 The script will open Admin Panel → log in manually → the script will add vendors from CSV.
+
+#### How to specify the CSV file path
+
+**Option 1 (easiest):** put the CSV file into the `promo-bot` folder on your Desktop and use just the filename:
+
+```
+python3 promo_bot.py add-vendors --csv venues.csv
+```
+
+**Option 2:** the file is in Downloads:
+
+```
+python3 promo_bot.py add-vendors --csv ~/Downloads/venues.csv
+```
+
+**Option 3 (drag & drop):** type the command up to `--csv` and then **drag the file from Finder directly into Terminal** — the path will be inserted automatically:
+
+```
+python3 promo_bot.py add-vendors --csv [drag your CSV file here]
+```
+
+> ⚠️ **Important:** `/path/to/file.csv` is just an example, not a real path! Always use the actual filename or path to your CSV file.
 
 ### Filter specific venues
 

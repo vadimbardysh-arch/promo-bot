@@ -127,10 +127,32 @@ python3 promo_bot.py end-promo --login EMAIL --password PASS
 ### Додати заклади через Admin Panel
 
 ```
-python3 promo_bot.py add-vendors --csv /path/to/file.csv
+python3 promo_bot.py add-vendors --csv venues.csv
 ```
 
 Скрипт відкриє Admin Panel → залогінся вручну → скрипт додасть вендорів з CSV.
+
+#### Як правильно вказати шлях до CSV файлу
+
+**Варіант 1 (найпростіший):** покласти CSV файл в папку `promo-bot` на Desktop і вказати тільки назву:
+
+```
+python3 promo_bot.py add-vendors --csv venues.csv
+```
+
+**Варіант 2:** файл лежить в Downloads:
+
+```
+python3 promo_bot.py add-vendors --csv ~/Downloads/venues.csv
+```
+
+**Варіант 3 (drag & drop):** написати команду до `--csv` і після пробілу **перетягнути файл з Finder прямо в Terminal** — шлях вставиться автоматично:
+
+```
+python3 promo_bot.py add-vendors --csv [перетягни CSV файл сюди]
+```
+
+> ⚠️ **Важливо:** `/path/to/file.csv` — це приклад, не справжній шлях! Завжди вказуй реальну назву або шлях до свого CSV файлу.
 
 ### Фільтр по конкретних venues
 
