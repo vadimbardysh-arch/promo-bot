@@ -81,58 +81,88 @@ chmod +x install.sh && ./install.sh
 
 ## Крок 5: Готово! Як запускати
 
-### Відкрити Terminal і перейти в папку
+### Перед кожним запуском
 
-Кожного разу коли хочеш запустити скрипт, спочатку перейди в папку:
+Відкрий Terminal і перейди в папку зі скриптом:
 
 ```
 cd ~/Desktop/promo-bot
 ```
 
-### Перевірити які Smart Promo доступні
+> 💡 **Як знайти Terminal:** натисни `Cmd + Пробіл`, напиши `Terminal`, натисни Enter.
 
-```
-python3 promo_bot.py check-promo --login EMAIL --password PASS
-```
+---
 
-Замість `EMAIL` та `PASS` підстав реальні дані для Food Partner Portal.
+### 1. Додати вендорів в акаунт через Admin Panel
 
-### Перевірити які Sponsored Listing доступні
-
-```
-python3 promo_bot.py check-listing --login EMAIL --password PASS
-```
-
-### Підключити Smart Promo
-
-```
-python3 promo_bot.py smart-promo --login EMAIL --password PASS --start 01/05/2026 --end 15/05/2026 --cohorts all
-```
-
-Параметри:
-- `--start` — дата початку (формат: DD/MM/YYYY)
-- `--end` — дата закінчення (формат: DD/MM/YYYY)
-- `--cohorts` — які когорти увімкнути:
-  - `all` — всі доступні
-  - `"Найкращі"` — лише когорта з такою назвою (в лапках!)
-  - `"Top Customers"` — по англійській назві
-  - `1,3` — 1-ша і 3-тя когорта за порядком
-
-### Вимкнути Smart Promo
-
-```
-python3 promo_bot.py end-promo --login EMAIL --password PASS
-```
-
-### Додати заклади через Admin Panel
+Покласти CSV файл в папку `promo-bot` на Desktop, потім:
 
 ```
 python3 promo_bot.py add-vendors --csv venues.csv
 ```
 
-Скрипт відкриє Admin Panel → залогінся вручну → скрипт додасть вендорів з CSV.
+Скрипт відкриє Admin Panel → залогінся вручну → скрипт додасть вендорів з CSV автоматично.
 
-#### Як правильно вказати шлях до CSV файлу
+### 2. Додати провайдерів в акаунт через Admin Panel
+
+```
+python3 promo_bot.py add-venues --csv venues.csv
+```
+
+Те саме, але додає окремих провайдерів замість вендорів.
+
+### 3. Перевірити доступні Smart Promo
+
+```
+python3 promo_bot.py check-promo --login EMAIL --password PASS
+```
+
+Замість `EMAIL` і `PASS` підстав реальні креди для Food Partner Portal.
+
+### 3.1 Перевірити доступні Sponsored Listing
+
+```
+python3 promo_bot.py check-listing --login EMAIL --password PASS
+```
+
+### 4. Підключити Smart Promo (всі точки)
+
+```
+python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All"
+```
+
+Параметри:
+- `--start` — дата початку (формат: DD/MM/YYYY, наприклад `22/04/2026`)
+- `--end` — дата закінчення (формат: DD/MM/YYYY, наприклад `28/04/2026`)
+- `--cohorts` — які когорти увімкнути:
+  - `"All"` — всі доступні когорти
+  - `"Top Customers"` — лише когорта з такою назвою (в лапках!)
+  - `"Найкращі"` — по українській назві
+  - `1,3` — 1-ша і 3-тя когорта за порядком
+
+### 4.1 Підключити Smart Promo на окремі точки
+
+Додай `--venues` з назвами через кому (в лапках):
+
+```
+python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All" --venues "PASTA ITALIANO,Pani Mozzarella"
+```
+
+### 5. Вимкнути Smart Promo (всі точки)
+
+```
+python3 promo_bot.py end-promo --login EMAIL --password PASS
+```
+
+### 5.1 Вимкнути Smart Promo на окремі точки
+
+```
+python3 promo_bot.py end-promo --login EMAIL --password PASS --venues "PASTA ITALIANO,Pani Mozzarella"
+```
+
+---
+
+### Як правильно вказати шлях до CSV файлу
 
 **Варіант 1 (найпростіший):** покласти CSV файл в папку `promo-bot` на Desktop і вказати тільки назву:
 
@@ -146,21 +176,13 @@ python3 promo_bot.py add-vendors --csv venues.csv
 python3 promo_bot.py add-vendors --csv ~/Downloads/venues.csv
 ```
 
-**Варіант 3 (drag & drop):** написати команду до `--csv` і після пробілу **перетягнути файл з Finder прямо в Terminal** — шлях вставиться автоматично:
+**Варіант 3 (drag & drop):** написати команду до `--csv ` і після пробілу **перетягнути файл з Finder прямо в Terminal** — шлях вставиться автоматично:
 
 ```
 python3 promo_bot.py add-vendors --csv [перетягни CSV файл сюди]
 ```
 
-> ⚠️ **Важливо:** `/path/to/file.csv` — це приклад, не справжній шлях! Завжди вказуй реальну назву або шлях до свого CSV файлу.
-
-### Фільтр по конкретних venues
-
-Додай `--venues` щоб обробити тільки певні точки:
-
-```
-python3 promo_bot.py smart-promo --login EMAIL --password PASS --start 01/05/2026 --end 15/05/2026 --cohorts all --venues "Грушевського,Валова"
-```
+> ⚠️ **Важливо:** `/path/to/file.csv` — це приклад, не справжній шлях! Завжди вказуй реальну назву або шлях до свого CSV файлу. Якщо в шляху є пробіли — оберни його в лапки: `"my file.csv"`
 
 ---
 

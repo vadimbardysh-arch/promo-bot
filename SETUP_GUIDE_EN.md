@@ -81,15 +81,37 @@ This only needs to be done once.
 
 ## Step 5: Done! How to Run
 
-### Open Terminal and navigate to the folder
+### Before each run
 
-Every time you want to run the script, first navigate to the folder:
+Open Terminal and navigate to the script folder:
 
 ```
 cd ~/Desktop/promo-bot
 ```
 
-### Check which Smart Promos are available
+> 💡 **How to find Terminal:** press `Cmd + Space`, type `Terminal`, press Enter.
+
+---
+
+### 1. Add vendors to account via Admin Panel
+
+Place the CSV file into the `promo-bot` folder on Desktop, then:
+
+```
+python3 promo_bot.py add-vendors --csv venues.csv
+```
+
+The script will open Admin Panel → log in manually → the script will add vendors from CSV automatically.
+
+### 2. Add providers to account via Admin Panel
+
+```
+python3 promo_bot.py add-venues --csv venues.csv
+```
+
+Same as above, but adds individual providers instead of vendors.
+
+### 3. Check available Smart Promos
 
 ```
 python3 promo_bot.py check-promo --login EMAIL --password PASS
@@ -97,41 +119,49 @@ python3 promo_bot.py check-promo --login EMAIL --password PASS
 
 Replace `EMAIL` and `PASS` with actual Food Partner Portal credentials.
 
-### Check which Sponsored Listings are available
+### 3.1 Check available Sponsored Listings
 
 ```
 python3 promo_bot.py check-listing --login EMAIL --password PASS
 ```
 
-### Activate Smart Promo
+### 4. Activate Smart Promo (all venues)
 
 ```
-python3 promo_bot.py smart-promo --login EMAIL --password PASS --start 01/05/2026 --end 15/05/2026 --cohorts all
+python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All"
 ```
 
 Parameters:
-- `--start` — start date (format: DD/MM/YYYY)
-- `--end` — end date (format: DD/MM/YYYY)
+- `--start` — start date (format: DD/MM/YYYY, e.g. `22/04/2026`)
+- `--end` — end date (format: DD/MM/YYYY, e.g. `28/04/2026`)
 - `--cohorts` — which cohorts to enable:
-  - `all` — all available cohorts
+  - `"All"` — all available cohorts
   - `"Top Customers"` — only the cohort matching this name (in quotes!)
   - `1,3` — 1st and 3rd cohort by position
 
-### Deactivate Smart Promo
+### 4.1 Activate Smart Promo for specific venues
+
+Add `--venues` with names separated by commas (in quotes):
+
+```
+python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All" --venues "PASTA ITALIANO,Pani Mozzarella"
+```
+
+### 5. Deactivate Smart Promo (all venues)
 
 ```
 python3 promo_bot.py end-promo --login EMAIL --password PASS
 ```
 
-### Add venues via Admin Panel
+### 5.1 Deactivate Smart Promo for specific venues
 
 ```
-python3 promo_bot.py add-vendors --csv venues.csv
+python3 promo_bot.py end-promo --login EMAIL --password PASS --venues "PASTA ITALIANO,Pani Mozzarella"
 ```
 
-The script will open Admin Panel → log in manually → the script will add vendors from CSV.
+---
 
-#### How to specify the CSV file path
+### How to specify the CSV file path
 
 **Option 1 (easiest):** put the CSV file into the `promo-bot` folder on your Desktop and use just the filename:
 
@@ -145,21 +175,13 @@ python3 promo_bot.py add-vendors --csv venues.csv
 python3 promo_bot.py add-vendors --csv ~/Downloads/venues.csv
 ```
 
-**Option 3 (drag & drop):** type the command up to `--csv` and then **drag the file from Finder directly into Terminal** — the path will be inserted automatically:
+**Option 3 (drag & drop):** type the command up to `--csv ` and then **drag the file from Finder directly into Terminal** — the path will be inserted automatically:
 
 ```
 python3 promo_bot.py add-vendors --csv [drag your CSV file here]
 ```
 
-> ⚠️ **Important:** `/path/to/file.csv` is just an example, not a real path! Always use the actual filename or path to your CSV file.
-
-### Filter specific venues
-
-Add `--venues` to process only certain venues:
-
-```
-python3 promo_bot.py smart-promo --login EMAIL --password PASS --start 01/05/2026 --end 15/05/2026 --cohorts all --venues "Grushevskogo,Valova"
-```
+> ⚠️ **Important:** `/path/to/file.csv` is just an example, not a real path! Always use the actual filename or path to your CSV file. If the path contains spaces, wrap it in quotes: `"my file.csv"`
 
 ---
 
