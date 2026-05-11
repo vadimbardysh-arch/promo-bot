@@ -98,6 +98,7 @@ cd ~/Desktop/promo-bot
 Place the CSV file into the `promo-bot` folder on Desktop, then:
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py add-vendors --csv venues.csv
 ```
 
@@ -106,6 +107,7 @@ The script will open Admin Panel → log in manually → the script will add ven
 ### 2. Add providers to account via Admin Panel
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py add-venues --csv venues.csv
 ```
 
@@ -114,6 +116,7 @@ Same as above, but adds individual providers instead of vendors.
 ### 3. Check available Smart Promos
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py check-promo --login EMAIL --password PASS
 ```
 
@@ -122,12 +125,14 @@ Replace `EMAIL` and `PASS` with actual Food Partner Portal credentials.
 ### 3.1 Check available Sponsored Listings
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py check-listing --login EMAIL --password PASS
 ```
 
 ### 4. Activate Smart Promo (all venues)
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All"
 ```
 
@@ -144,18 +149,21 @@ Parameters:
 Add `--venues` with names separated by commas (in quotes):
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All" --venues "PASTA ITALIANO,Pani Mozzarella"
 ```
 
 ### 5. Deactivate Smart Promo (all venues)
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py end-promo --login EMAIL --password PASS
 ```
 
 ### 5.1 Deactivate Smart Promo for specific venues
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py end-promo --login EMAIL --password PASS --venues "PASTA ITALIANO,Pani Mozzarella"
 ```
 

@@ -98,6 +98,7 @@ cd ~/Desktop/promo-bot
 Покласти CSV файл в папку `promo-bot` на Desktop, потім:
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py add-vendors --csv venues.csv
 ```
 
@@ -106,6 +107,7 @@ python3 promo_bot.py add-vendors --csv venues.csv
 ### 2. Додати провайдерів в акаунт через Admin Panel
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py add-venues --csv venues.csv
 ```
 
@@ -114,6 +116,7 @@ python3 promo_bot.py add-venues --csv venues.csv
 ### 3. Перевірити доступні Smart Promo
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py check-promo --login EMAIL --password PASS
 ```
 
@@ -122,12 +125,14 @@ python3 promo_bot.py check-promo --login EMAIL --password PASS
 ### 3.1 Перевірити доступні Sponsored Listing
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py check-listing --login EMAIL --password PASS
 ```
 
 ### 4. Підключити Smart Promo (всі точки)
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All"
 ```
 
@@ -145,18 +150,21 @@ python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYY
 Додай `--venues` з назвами через кому (в лапках):
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py smart-promo --login EMAIL --password PASS --start DD/MM/YYYY --end DD/MM/YYYY --cohorts "All" --venues "PASTA ITALIANO,Pani Mozzarella"
 ```
 
 ### 5. Вимкнути Smart Promo (всі точки)
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py end-promo --login EMAIL --password PASS
 ```
 
 ### 5.1 Вимкнути Smart Promo на окремі точки
 
 ```
+cd ~/Desktop/promo-bot
 python3 promo_bot.py end-promo --login EMAIL --password PASS --venues "PASTA ITALIANO,Pani Mozzarella"
 ```
 
