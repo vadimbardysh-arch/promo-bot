@@ -25,7 +25,7 @@
 ```
 1. Завантажити CSV із Looker (список закладів)
          ↓
-2. Додати заклади в портал через Admin Panel (add-vendors)
+2. Додати заклади в портал через Admin Panel (add-vendors / add-venues)
          ↓
 3. Перевірити які промо доступні (check-promo / check-listing)
          ↓

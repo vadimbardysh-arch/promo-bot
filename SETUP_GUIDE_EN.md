@@ -25,7 +25,7 @@ The script opens a browser (Chromium), logs into the Food Partner Portal and aut
 ```
 1. Download CSV from Looker (list of venues)
          ↓
-2. Add venues to portal via Admin Panel (add-vendors)
+2. Add venues to portal via Admin Panel (add-vendors / add-venues)
          ↓
 3. Check which promos are available (check-promo / check-listing)
          ↓
