@@ -93,6 +93,16 @@ cd ~/Desktop/promo-bot
 
 ---
 
+### 0. Download CSV with venue data
+
+Go to Looker and download the CSV with the venues you need:
+
+👉 **https://bolt.cloud.looker.com/looks/51749**
+
+Filter by your country/city → click **Download → CSV** → save the file and place it into the `promo-bot` folder on Desktop.
+
+---
+
 ### 1. Add vendors to account via Admin Panel
 
 Place the CSV file into the `promo-bot` folder on Desktop, then:
