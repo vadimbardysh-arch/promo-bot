@@ -23,7 +23,7 @@ import io
 from collections import defaultdict
 from playwright.async_api import async_playwright
 
-ADMIN_PANEL_ACCOUNT_URL = "https://admin-panel.bolt.eu/delivery-provider/providerPortalAccounts/20239"
+ADMIN_PANEL_BASE_URL = "https://admin-panel.bolt.eu/delivery-provider/providerPortalAccounts"
 FOOD_PARTNER_LOGIN_URL = "https://foodpartner.bolt.eu/login"
 
 
@@ -81,7 +81,7 @@ def unique_vendors_by_city(providers: list[dict]) -> dict:
 # Phase 1a: Admin Panel — add vendors (швидкий варіант)
 # ---------------------------------------------------------------------------
 
-async def add_vendors(csv_path: str):
+async def add_vendors(csv_path: str, account_id: str):
     providers = read_providers_csv(csv_path)
     if not providers:
         print("CSV is empty or failed to read data.")
@@ -104,13 +104,14 @@ async def add_vendors(csv_path: str):
         context = await browser.new_context(viewport={"width": 1400, "height": 900})
         page = await context.new_page()
 
-        print(">> Opening Admin Panel...")
+        account_url = f"{ADMIN_PANEL_BASE_URL}/{account_id}"
+        print(f">> Opening Admin Panel (account {account_id})...")
         print(">> Please log in to Admin Panel.")
         print(">> After logging in, press Enter in the terminal.\n")
-        await page.goto(ADMIN_PANEL_ACCOUNT_URL)
+        await page.goto(account_url)
         input("   [Press Enter when logged in and you see the account page] ")
 
-        await page.goto(ADMIN_PANEL_ACCOUNT_URL)
+        await page.goto(account_url)
         await page.wait_for_load_state("networkidle")
         await asyncio.sleep(2)
 
@@ -185,7 +186,7 @@ async def add_vendors(csv_path: str):
 # Phase 1b: Admin Panel — add venues (детальний варіант)
 # ---------------------------------------------------------------------------
 
-async def add_venues(csv_path: str):
+async def add_venues(csv_path: str, account_id: str):
     providers = read_providers_csv(csv_path)
     if not providers:
         print("CSV is empty or failed to read data.")
@@ -211,14 +212,15 @@ async def add_venues(csv_path: str):
         page = await context.new_page()
 
         # Крок 1: Користувач логіниться вручну
-        print(">> Opening Admin Panel...")
+        account_url = f"{ADMIN_PANEL_BASE_URL}/{account_id}"
+        print(f">> Opening Admin Panel (account {account_id})...")
         print(">> Please log in to Admin Panel.")
         print(">> After logging in, press Enter in the terminal.\n")
-        await page.goto(ADMIN_PANEL_ACCOUNT_URL)
+        await page.goto(account_url)
         input("   [Press Enter when logged in and you see the account page] ")
 
         # Крок 2: Переходимо на сторінку акаунту (на випадок якщо редірект)
-        await page.goto(ADMIN_PANEL_ACCOUNT_URL)
+        await page.goto(account_url)
         await page.wait_for_load_state("networkidle")
         await asyncio.sleep(2)
 
@@ -1680,10 +1682,12 @@ def main():
     # add-vendors (швидкий — тільки вендори)
     p_vendors = subparsers.add_parser("add-vendors", help="Add vendors via Admin Panel (fast)")
     p_vendors.add_argument("--csv", required=True, help="Path to CSV file")
+    p_vendors.add_argument("--account", required=True, help="Account ID from Admin Panel URL (e.g. 20239)")
 
     # add-venues (детальний — провайдери)
     p_venues = subparsers.add_parser("add-venues", help="Add venues via Admin Panel (detailed)")
     p_venues.add_argument("--csv", required=True, help="Path to CSV file with providers")
+    p_venues.add_argument("--account", required=True, help="Account ID from Admin Panel URL (e.g. 20239)")
 
     # check-promo
     p_check = subparsers.add_parser("check-promo", help="Check which Smart Promos are available per venue")
@@ -1728,9 +1732,9 @@ def main():
     args = parser.parse_args()
 
     if args.command == "add-vendors":
-        asyncio.run(add_vendors(args.csv))
+        asyncio.run(add_vendors(args.csv, args.account))
     elif args.command == "add-venues":
-        asyncio.run(add_venues(args.csv))
+        asyncio.run(add_venues(args.csv, args.account))
     elif args.command == "check-promo":
         asyncio.run(check_promo(args.login, args.password, args.venues))
     elif args.command == "check-listing":

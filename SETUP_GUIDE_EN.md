@@ -143,8 +143,11 @@ Place the CSV file into the `promo-bot` folder on Desktop, then:
 
 ```
 cd ~/Desktop/promo-bot
-python3 promo_bot.py add-vendors --csv venues.csv
+python3 promo_bot.py add-vendors --csv venues.csv --account 20239
 ```
+
+- `--account` — Account ID from the Admin Panel URL. It's the number at the end of the account page URL:
+  `https://admin-panel.bolt.eu/delivery-provider/providerPortalAccounts/`**20239** ← this is the ID
 
 The script will open Admin Panel → log in manually → the script will add vendors from CSV automatically.
 
@@ -152,7 +155,7 @@ The script will open Admin Panel → log in manually → the script will add ven
 
 ```
 cd ~/Desktop/promo-bot
-python3 promo_bot.py add-venues --csv venues.csv
+python3 promo_bot.py add-venues --csv venues.csv --account 20239
 ```
 
 Same as above, but adds individual providers instead of vendors.

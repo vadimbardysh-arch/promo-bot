@@ -143,8 +143,11 @@ cd ~/Desktop/promo-bot
 
 ```
 cd ~/Desktop/promo-bot
-python3 promo_bot.py add-vendors --csv venues.csv
+python3 promo_bot.py add-vendors --csv venues.csv --account 20239
 ```
+
+- `--account` — ID акаунту з Admin Panel. Це число в кінці URL сторінки акаунту:
+  `https://admin-panel.bolt.eu/delivery-provider/providerPortalAccounts/`**20239** ← це і є ID
 
 Скрипт відкриє Admin Panel → залогінся вручну → скрипт додасть вендорів з CSV автоматично.
 
@@ -152,7 +155,7 @@ python3 promo_bot.py add-vendors --csv venues.csv
 
 ```
 cd ~/Desktop/promo-bot
-python3 promo_bot.py add-venues --csv venues.csv
+python3 promo_bot.py add-venues --csv venues.csv --account 20239
 ```
 
 Те саме, але додає окремих провайдерів замість вендорів.
