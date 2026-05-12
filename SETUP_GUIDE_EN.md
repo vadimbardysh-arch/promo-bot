@@ -298,7 +298,6 @@ Run the command again — the script will skip venues where promo is already act
 | `check-listing` | Check which Sponsored Listings are available |
 | `smart-promo` | Activate Smart Promotions |
 | `end-promo` | Deactivate active Smart Promotions |
-| `listing` | Launch Sponsored Listing |
 | `add-vendors` | Add vendors via Admin Panel |
 | `add-venues` | Add providers via Admin Panel |
 

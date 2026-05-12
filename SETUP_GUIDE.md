@@ -299,7 +299,6 @@ xcode-select --install
 | `check-listing` | Перевіряє які Sponsored Listing доступні |
 | `smart-promo` | Підключає Smart Promotions |
 | `end-promo` | Вимикає активні Smart Promotions |
-| `listing` | Запускає Sponsored Listing |
 | `add-vendors` | Додає вендорів через Admin Panel |
 | `add-venues` | Додає провайдерів через Admin Panel |
 

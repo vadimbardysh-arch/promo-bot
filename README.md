@@ -17,7 +17,6 @@
 | `check-listing` | Перевірити які Sponsored Listing доступні кожній venue |
 | `smart-promo` | Підключити Smart Promotions |
 | `end-promo` | Вимкнути активні Smart Promotions |
-| `listing` | Запустити Sponsored Listing |
 
 ## Встановлення
 

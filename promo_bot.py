@@ -1370,94 +1370,6 @@ async def setup_smart_promo(
 # Phase 2: Food Partner Portal — Sponsored Listing
 # ---------------------------------------------------------------------------
 
-async def setup_listing(login: str, password: str, start_date: str = None, end_date: str = None):
-    async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=False, slow_mo=300)
-        context = await browser.new_context(viewport={"width": 1400, "height": 900})
-        page = await context.new_page()
-
-        await login_food_partner(page, login, password)
-
-        venues = await get_all_venues(page)
-        print(f"\n>> Found {len(venues)} venues")
-
-        for i, venue_name in enumerate(venues):
-            print(f"\n>> [{i+1}/{len(venues)}] Sponsored Listing for: {venue_name}")
-            await switch_venue(page, venue_name)
-
-            await page.locator("a:has-text('Promotions')").click()
-            await page.wait_for_load_state("networkidle")
-            await asyncio.sleep(3)
-
-            # Знаходимо кнопку "Create" саме для Sponsored Listing
-            listing_text = page.locator("text=Run Sponsored Listing in Search results")
-            if await listing_text.count() == 0:
-                print(f"   ⚠ Sponsored Listing not available — skipping")
-                continue
-
-            # Кнопка Create знаходиться в тому ж контейнері
-            try:
-                container = listing_text.locator("xpath=..")
-                create_btn = container.locator("button:has-text('Create')")
-                if await create_btn.count() == 0:
-                    container = listing_text.locator("xpath=../..")
-                    create_btn = container.locator("button:has-text('Create')")
-                await create_btn.first.click(timeout=5000)
-                await asyncio.sleep(5)
-            except Exception:
-                print(f"   ⚠ Failed to click 'Create' for Sponsored Listing")
-                input("   [Click 'Create' manually and press Enter] ")
-
-            # Сторінка "Run Sponsored Listing"
-            # Редагуємо дати
-            if start_date or end_date:
-                try:
-                    edit_link = page.locator("text=Edit").first
-                    await edit_link.click(timeout=3000)
-                    await asyncio.sleep(1)
-
-                    # Textbox "Start date" та "End date" прямо на сторінці
-                    if start_date:
-                        start_input = page.get_by_label("Start date")
-                        await start_input.click()
-                        await start_input.press("Control+a")
-                        await start_input.type(start_date, delay=30)
-
-                    if end_date:
-                        end_input = page.get_by_label("End date")
-                        await end_input.click()
-                        await end_input.press("Control+a")
-                        await end_input.type(end_date, delay=30)
-
-                    await asyncio.sleep(1)
-                    print(f"   ✓ Dates: {start_date} — {end_date}")
-                except Exception as e:
-                    print(f"   ⚠ Failed to change dates: {e}")
-
-            # Приймаємо T&C
-            tc = page.locator("input[type='checkbox']")
-            if await tc.count() > 0:
-                checkbox = tc.last
-                if not await checkbox.is_checked():
-                    await checkbox.click()
-                    await asyncio.sleep(0.5)
-
-            # Натискаємо "Launch Sponsored Listing"
-            launch_btn = page.locator("button:has-text('Launch Sponsored Listing')")
-            try:
-                await launch_btn.click(timeout=5000)
-                await asyncio.sleep(3)
-                print(f"   ✓ Sponsored Listing launched!")
-            except Exception:
-                print(f"   ⚠ 'Launch Sponsored Listing' unavailable — check manually")
-                input("   [Check and press Enter] ")
-
-        print(f"\n{'='*60}")
-        print(f"  Sponsored Listing setup complete!")
-        print(f"{'='*60}\n")
-        await browser.close()
-
-
 # ---------------------------------------------------------------------------
 # Phase 3: Food Partner Portal — End Smart Promo
 # ---------------------------------------------------------------------------
@@ -1744,13 +1656,6 @@ def main():
     p_end.add_argument("--password", required=True, help="Password")
     p_end.add_argument("--venues", default=None, help="Filter venues (name parts comma-separated)")
 
-    # listing
-    p_listing = subparsers.add_parser("listing", help="Launch Sponsored Listing")
-    p_listing.add_argument("--login", required=True, help="Email for Food Partner Portal")
-    p_listing.add_argument("--password", required=True, help="Password")
-    p_listing.add_argument("--start", default=None, help="Start date (DD/MM/YYYY)")
-    p_listing.add_argument("--end", default=None, help="End date (DD/MM/YYYY)")
-
     args = parser.parse_args()
 
     if args.command == "add-vendors":
@@ -1765,8 +1670,6 @@ def main():
         asyncio.run(setup_smart_promo(args.login, args.password, args.start, args.end, args.cohorts, args.venues))
     elif args.command == "end-promo":
         asyncio.run(end_promo(args.login, args.password, args.venues))
-    elif args.command == "listing":
-        asyncio.run(setup_listing(args.login, args.password, args.start, args.end))
     else:
         parser.print_help()
 
