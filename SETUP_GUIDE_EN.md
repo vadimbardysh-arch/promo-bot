@@ -125,6 +125,12 @@ cd ~/Desktop/promo-bot
 
 > 💡 **How to find Terminal:** press `Cmd + Space`, type `Terminal`, press Enter.
 
+> 🔴 **IMPORTANT! Before each new run:**
+> 1. **Remove venues** from the previous run in the Food Partner Portal account (via Admin Panel)
+> 2. **Replace the CSV file** `venues.csv` with a new one — containing the current list of partners for this run
+>
+> If you skip this, the script will add new partners on top of old ones, and promos will be activated for ALL of them — both new and old!
+
 ---
 
 ### 0. Download CSV with venue data
