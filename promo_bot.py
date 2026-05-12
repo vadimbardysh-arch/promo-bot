@@ -31,18 +31,40 @@ FOOD_PARTNER_LOGIN_URL = "https://foodpartner.bolt.eu/login"
 # CSV parsing
 # ---------------------------------------------------------------------------
 
+COLUMN_ALIASES = {
+    "city": ["2. Merchant Information City Name", "City Name", "city", "City"],
+    "provider_id": ["2. Merchant Information Provider ID", "Provider ID", "provider_id"],
+    "provider_name": ["2. Merchant Information Provider Name", "Provider Name", "provider_name"],
+    "vendor_id": ["2. Merchant Information Vendor ID", "Vendor ID", "vendor_id"],
+    "vendor_name": ["2. Merchant Information Vendor Name", "Vendor Name", "vendor_name"],
+}
+
+
+def find_column(row: dict, aliases: list[str]) -> str:
+    for alias in aliases:
+        val = row.get(alias, "").strip()
+        if val:
+            return val
+    for key in row:
+        clean_key = key.lstrip("\ufeff").strip().strip(",").strip()
+        for alias in aliases:
+            if clean_key == alias:
+                return row[key].strip()
+    return ""
+
+
 def read_providers_csv(csv_path: str) -> list[dict]:
-    with open(csv_path, "r", encoding="utf-8") as f:
+    with open(csv_path, "r", encoding="utf-8-sig") as f:
         raw = f.read()
 
     reader = csv.DictReader(io.StringIO(raw))
     rows = []
     for row in reader:
-        city = row.get("2. Merchant Information City Name", "").strip()
-        provider_id = row.get("2. Merchant Information Provider ID", "").strip()
-        provider_name = row.get("2. Merchant Information Provider Name", "").strip()
-        vendor_id = row.get("2. Merchant Information Vendor ID", "").strip()
-        vendor_name = row.get("2. Merchant Information Vendor Name", "").strip()
+        city = find_column(row, COLUMN_ALIASES["city"])
+        provider_id = find_column(row, COLUMN_ALIASES["provider_id"])
+        provider_name = find_column(row, COLUMN_ALIASES["provider_name"])
+        vendor_id = find_column(row, COLUMN_ALIASES["vendor_id"])
+        vendor_name = find_column(row, COLUMN_ALIASES["vendor_name"])
         if city and provider_name:
             rows.append({
                 "city": city,
