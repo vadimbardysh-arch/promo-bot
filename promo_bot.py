@@ -1021,34 +1021,64 @@ async def setup_smart_promo(
                             print(f"   ○ '{cname}' disabled")
 
             # Редагуємо розклад (дати)
-            # "Edit" може бути <button> або clickable <div>/<span>
             if start_date or end_date:
                 try:
                     edit_clicked = False
-                    # Спершу шукаємо enabled button
-                    edit_btn = page.locator("button:has-text('Edit')").first
-                    if await edit_btn.count() > 0:
-                        is_disabled = await edit_btn.get_attribute("disabled")
-                        if is_disabled is None:
-                            await edit_btn.click(timeout=5000)
-                            edit_clicked = True
-                    # Якщо кнопки нема — шукаємо clickable text "Edit"
-                    if not edit_clicked:
-                        edit_text = page.get_by_text("Edit", exact=True).first
-                        await edit_text.click(timeout=5000)
+                    for sel in [
+                        page.locator("button:has-text('Edit')").first,
+                        page.get_by_text("Edit", exact=True).first,
+                        page.locator("[class*='edit' i]").first,
+                        page.locator("a:has-text('Edit')").first,
+                    ]:
+                        try:
+                            if await sel.count() > 0:
+                                dis = await sel.get_attribute("disabled")
+                                if dis is None:
+                                    await sel.click(timeout=5000)
+                                    edit_clicked = True
+                                    break
+                        except Exception:
+                            continue
                     await asyncio.sleep(2)
 
+                    async def find_date_input(label: str):
+                        for attempt in [
+                            page.get_by_role("textbox", name=label),
+                            page.get_by_label(label),
+                            page.get_by_placeholder(label),
+                            page.locator(f"input[aria-label='{label}']"),
+                            page.locator(f"input[name*='{label.lower().replace(' ', '')}']"),
+                        ]:
+                            try:
+                                if await attempt.count() > 0:
+                                    return attempt.first
+                            except Exception:
+                                continue
+                        all_inputs = page.locator("input[type='text'], input[type='date'], input:not([type='checkbox']):not([type='hidden'])")
+                        cnt = await all_inputs.count()
+                        if label.lower().startswith("start") and cnt >= 1:
+                            return all_inputs.nth(0)
+                        if label.lower().startswith("end") and cnt >= 2:
+                            return all_inputs.nth(1)
+                        return None
+
                     if start_date:
-                        start_input = page.get_by_role("textbox", name="Start date")
-                        await start_input.click(click_count=3)
-                        await asyncio.sleep(0.3)
-                        await start_input.fill(start_date)
+                        si = await find_date_input("Start date")
+                        if si:
+                            await si.click(click_count=3)
+                            await asyncio.sleep(0.3)
+                            await si.fill(start_date)
+                        else:
+                            print("   ⚠ 'Start date' input not found")
 
                     if end_date:
-                        end_input = page.get_by_role("textbox", name="End date")
-                        await end_input.click(click_count=3)
-                        await asyncio.sleep(0.3)
-                        await end_input.fill(end_date)
+                        ei = await find_date_input("End date")
+                        if ei:
+                            await ei.click(click_count=3)
+                            await asyncio.sleep(0.3)
+                            await ei.fill(end_date)
+                        else:
+                            print("   ⚠ 'End date' input not found")
 
                     await asyncio.sleep(0.5)
                     await dismiss_overlays(page)
@@ -1258,24 +1288,54 @@ async def setup_smart_promo(
 
                 if start_date or end_date:
                     try:
-                        edit_btn = page.locator("button:has-text('Edit')").first
-                        if await edit_btn.count() > 0:
-                            is_disabled = await edit_btn.get_attribute("disabled")
-                            if is_disabled is None:
-                                await edit_btn.click(timeout=5000)
-                        else:
-                            await page.get_by_text("Edit", exact=True).first.click(timeout=5000)
+                        for sel in [
+                            page.locator("button:has-text('Edit')").first,
+                            page.get_by_text("Edit", exact=True).first,
+                            page.locator("[class*='edit' i]").first,
+                            page.locator("a:has-text('Edit')").first,
+                        ]:
+                            try:
+                                if await sel.count() > 0:
+                                    dis = await sel.get_attribute("disabled")
+                                    if dis is None:
+                                        await sel.click(timeout=5000)
+                                        break
+                            except Exception:
+                                continue
                         await asyncio.sleep(2)
+
+                        async def find_date_input_retry(label: str):
+                            for attempt in [
+                                page.get_by_role("textbox", name=label),
+                                page.get_by_label(label),
+                                page.get_by_placeholder(label),
+                                page.locator(f"input[aria-label='{label}']"),
+                            ]:
+                                try:
+                                    if await attempt.count() > 0:
+                                        return attempt.first
+                                except Exception:
+                                    continue
+                            all_inputs = page.locator("input[type='text'], input[type='date'], input:not([type='checkbox']):not([type='hidden'])")
+                            cnt = await all_inputs.count()
+                            if label.lower().startswith("start") and cnt >= 1:
+                                return all_inputs.nth(0)
+                            if label.lower().startswith("end") and cnt >= 2:
+                                return all_inputs.nth(1)
+                            return None
+
                         if start_date:
-                            si = page.get_by_role("textbox", name="Start date")
-                            await si.click(click_count=3)
-                            await asyncio.sleep(0.3)
-                            await si.fill(start_date)
+                            si = await find_date_input_retry("Start date")
+                            if si:
+                                await si.click(click_count=3)
+                                await asyncio.sleep(0.3)
+                                await si.fill(start_date)
                         if end_date:
-                            ei = page.get_by_role("textbox", name="End date")
-                            await ei.click(click_count=3)
-                            await asyncio.sleep(0.3)
-                            await ei.fill(end_date)
+                            ei = await find_date_input_retry("End date")
+                            if ei:
+                                await ei.click(click_count=3)
+                                await asyncio.sleep(0.3)
+                                await ei.fill(end_date)
                         await asyncio.sleep(0.5)
                         await dismiss_overlays(page)
                         save_btn = page.locator("button:has-text('Save')").first
