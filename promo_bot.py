@@ -468,15 +468,7 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
             await dismiss_overlays(page)
             await handle_error_page(page)
 
-            # Перевіряємо чи вже є активне Smart Promo
-            active_promo = page.get_by_text("Custom smart promotion", exact=False)
-            active_badge = page.locator("text=Active")
-            if await active_promo.count() > 0 and await active_badge.count() > 0:
-                print(f"   ● Smart Promo already ACTIVE")
-                report.append({"venue": venue_name, "status": "ACTIVE", "cohorts": [], "reason": "Smart Promo already connected"})
-                continue
-
-            # Пробуємо зайти в налаштування Smart Promo
+            # Спершу шукаємо кнопки Smart Promo — якщо є, значить воно НЕ активне
             entered = False
             for attempt in range(3):
                 create_plan = page.locator("button:has-text('Create plan'), button:has-text('Створити план')")
@@ -486,7 +478,7 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                     entered = True
                     break
 
-                get_started = page.locator("button:has-text('Get started'), button:has-text('Розпочати')")
+                get_started = page.locator("button:has-text('Get started'), button:has-text('Почати'), button:has-text('Розпочати')")
                 if await get_started.count() > 0:
                     await get_started.first.click()
                     await asyncio.sleep(3)
@@ -503,9 +495,32 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                     await asyncio.sleep(3)
 
             if not entered:
-                print(f"   ✕ Smart Promo UNAVAILABLE")
-                report.append({"venue": venue_name, "status": "UNAVAILABLE", "cohorts": [], "reason": "No Create plan / Get started button"})
-                continue
+                # Кнопок немає — перевіряємо чи Smart Promo вже активне
+                # Шукаємо "Custom smart promotion" саме в секції Розумних акцій
+                custom_promo = page.get_by_text("Custom smart promotion", exact=False)
+                custom_promo_ua = page.get_by_text("Налаштована розумна акція", exact=False)
+                has_custom = await custom_promo.count() > 0 or await custom_promo_ua.count() > 0
+
+                # Шукаємо бейдж Active/Активно саме біля Smart Promo
+                smart_active = False
+                if has_custom:
+                    el = custom_promo if await custom_promo.count() > 0 else custom_promo_ua
+                    for level in range(1, 5):
+                        xpath_up = "/".join([".."] * level)
+                        parent = el.first.locator(f"xpath={xpath_up}")
+                        parent_text = await parent.inner_text()
+                        if "Active" in parent_text or "Активно" in parent_text or "active" in parent_text.lower():
+                            smart_active = True
+                            break
+
+                if smart_active:
+                    print(f"   ● Smart Promo already ACTIVE")
+                    report.append({"venue": venue_name, "status": "ACTIVE", "cohorts": [], "reason": "Smart Promo already connected"})
+                    continue
+                else:
+                    print(f"   ✕ Smart Promo UNAVAILABLE")
+                    report.append({"venue": venue_name, "status": "UNAVAILABLE", "cohorts": [], "reason": "No Create plan / Get started button"})
+                    continue
 
             # Зчитуємо когорти
             toggles = page.get_by_role("switch")
@@ -892,7 +907,7 @@ async def setup_smart_promo(
                     entered = True
                     break
 
-                get_started = page.locator("button:has-text('Get started'), button:has-text('Розпочати')")
+                get_started = page.locator("button:has-text('Get started'), button:has-text('Почати'), button:has-text('Розпочати')")
                 if await get_started.count() > 0:
                     await get_started.first.click()
                     await asyncio.sleep(3)
