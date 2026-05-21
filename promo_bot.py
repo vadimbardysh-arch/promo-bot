@@ -462,9 +462,23 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                     report.append({"venue": venue_name, "status": "ERROR", "cohorts": [], "reason": "Failed to switch venue"})
                     continue
 
-            await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-            await page.wait_for_load_state("networkidle")
-            await asyncio.sleep(3)
+            try:
+                await ensure_logged_in(page, login, password)
+                await handle_error_page(page)
+                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                await page.wait_for_load_state("networkidle")
+                await asyncio.sleep(3)
+            except Exception:
+                try:
+                    await ensure_logged_in(page, login, password)
+                    await handle_error_page(page)
+                    await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    print(f"   ⚠ Failed to open Promotions page — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "cohorts": [], "reason": "Failed to open Promotions page"})
+                    continue
             await dismiss_overlays(page)
             await handle_error_page(page)
 
