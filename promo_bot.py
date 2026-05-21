@@ -665,9 +665,23 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                     report.append({"venue": venue_name, "status": "ERROR", "listings": [], "reason": "Failed to switch venue"})
                     continue
 
-            await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-            await page.wait_for_load_state("networkidle")
-            await asyncio.sleep(3)
+            try:
+                await ensure_logged_in(page, login, password)
+                await handle_error_page(page)
+                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                await page.wait_for_load_state("networkidle")
+                await asyncio.sleep(3)
+            except Exception:
+                try:
+                    await ensure_logged_in(page, login, password)
+                    await handle_error_page(page)
+                    await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    print(f"   ⚠ Failed to open Promotions page — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "listings": [], "reason": "Failed to open Promotions page"})
+                    continue
             await dismiss_overlays(page)
             await handle_error_page(page)
 
@@ -894,14 +908,25 @@ async def setup_smart_promo(
                     report.append({"venue": venue_name, "status": "ERROR", "reason": "Failed to switch venue"})
                     continue
 
-            await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-            await page.wait_for_load_state("networkidle")
-            await asyncio.sleep(3)
+            try:
+                await ensure_logged_in(page, login, password)
+                await handle_error_page(page)
+                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                await page.wait_for_load_state("networkidle")
+                await asyncio.sleep(3)
+            except Exception:
+                try:
+                    await ensure_logged_in(page, login, password)
+                    await handle_error_page(page)
+                    await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    print(f"   ⚠ Failed to open Promotions page — skipping")
+                    report.append({"venue": venue_name, "status": "ERROR", "reason": "Failed to open Promotions page"})
+                    continue
             await dismiss_overlays(page)
-
-            # Якщо сторінка показує помилку — Try again і retry
-            if await handle_error_page(page):
-                await asyncio.sleep(2)
+            await handle_error_page(page)
 
             # Скролимо вниз щоб побачити секцію Smart Promo
             await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -938,10 +963,21 @@ async def setup_smart_promo(
                     await asyncio.sleep(3)
 
             if not entered:
-                # Перевіряємо чи промо вже активне
-                active_text = page.locator("text=Active")
+                # Перевіряємо чи промо вже активне (шукаємо бейдж в секції Smart Promo)
                 custom_promo = page.get_by_text("Custom smart promotion", exact=False)
-                if await active_text.count() > 0 and await custom_promo.count() > 0:
+                custom_promo_ua = page.get_by_text("Налаштована розумна акція", exact=False)
+                has_custom = await custom_promo.count() > 0 or await custom_promo_ua.count() > 0
+                smart_active = False
+                if has_custom:
+                    el = custom_promo if await custom_promo.count() > 0 else custom_promo_ua
+                    for level in range(1, 5):
+                        xpath_up = "/".join([".."] * level)
+                        parent = el.first.locator(f"xpath={xpath_up}")
+                        parent_text = await parent.inner_text()
+                        if "Active" in parent_text or "Активно" in parent_text or "active" in parent_text.lower():
+                            smart_active = True
+                            break
+                if smart_active:
                     print(f"   ○ Smart Promo already active — skipping")
                     report.append({"venue": venue_name, "status": "SKIPPED", "reason": "Smart Promo already active"})
                 else:
@@ -1159,14 +1195,27 @@ async def setup_smart_promo(
                 await asyncio.sleep(2)
 
                 # Верифікація: переходимо на Promotions і перевіряємо чи промо активне
-                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-                await page.wait_for_load_state("networkidle")
-                await asyncio.sleep(3)
+                try:
+                    await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
 
-                is_active = (
-                    await page.get_by_text("Custom smart promotion", exact=False).count() > 0
-                    and await page.locator("text=Active").count() > 0
-                )
+                is_active = False
+                custom_el = page.get_by_text("Custom smart promotion", exact=False)
+                custom_el_ua = page.get_by_text("Налаштована розумна акція", exact=False)
+                if await custom_el.count() > 0 or await custom_el_ua.count() > 0:
+                    el = custom_el if await custom_el.count() > 0 else custom_el_ua
+                    for level in range(1, 5):
+                        xpath_up = "/".join([".."] * level)
+                        parent = el.first.locator(f"xpath={xpath_up}")
+                        parent_text = await parent.inner_text()
+                        if "Active" in parent_text or "Активно" in parent_text or "active" in parent_text.lower():
+                            is_active = True
+                            break
 
                 cohort_str = ", ".join(enabled_cohorts) if enabled_cohorts else "all"
                 dates_str = f"{start_date} — {end_date}" if start_date and end_date else "default"
@@ -1218,9 +1267,23 @@ async def setup_smart_promo(
                         report.append({"venue": venue_name, "status": "ERROR", "reason": "Retry pass: failed to switch venue"})
                         continue
 
-                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-                await page.wait_for_load_state("networkidle")
-                await asyncio.sleep(3)
+                try:
+                    await ensure_logged_in(page, login, password)
+                    await handle_error_page(page)
+                    await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    try:
+                        await ensure_logged_in(page, login, password)
+                        await handle_error_page(page)
+                        await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                        await page.wait_for_load_state("networkidle")
+                        await asyncio.sleep(3)
+                    except Exception:
+                        print(f"   ⚠ Failed to open Promotions page — skipping")
+                        report.append({"venue": venue_name, "status": "ERROR", "reason": "Retry pass: failed to open Promotions page"})
+                        continue
                 await dismiss_overlays(page)
                 await handle_error_page(page)
 
@@ -1237,7 +1300,7 @@ async def setup_smart_promo(
                         await asyncio.sleep(3)
                         entered = True
                         break
-                    get_started = page.locator("button:has-text('Get started'), button:has-text('Розпочати')")
+                    get_started = page.locator("button:has-text('Get started'), button:has-text('Почати'), button:has-text('Розпочати')")
                     if await get_started.count() > 0:
                         await get_started.first.click()
                         await asyncio.sleep(3)
@@ -1503,9 +1566,23 @@ async def end_promo(login: str, password: str, filters: str = None):
                     await handle_error_page(page)
                     await switch_venue(page, venue_name)
 
-                await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click()
-                await page.wait_for_load_state("networkidle")
-                await asyncio.sleep(3)
+                try:
+                    await ensure_logged_in(page, login, password)
+                    await handle_error_page(page)
+                    await page.locator("a:has-text('Promotions'), a:has-text('Промоакції')").first.click(timeout=10000)
+                    await page.wait_for_load_state("networkidle")
+                    await asyncio.sleep(3)
+                except Exception:
+                    try:
+                        await ensure_logged_in(page, login, password)
+                        await handle_error_page(page)
+                        await page.goto("https://foodpartner.bolt.eu/dashboard/promotions")
+                        await page.wait_for_load_state("networkidle")
+                        await asyncio.sleep(3)
+                    except Exception:
+                        print(f"   ⚠ Failed to open Promotions page — skipping")
+                        report.append({"venue": venue_name, "status": "ERROR", "reason": "Failed to open Promotions page"})
+                        continue
                 await handle_error_page(page)
 
                 # Шукаємо саме "Custom smart promotion" — інші промо не чіпаємо
