@@ -1,6 +1,8 @@
 .DS_Store
 screenshots/
+reports/
 listing_html_dump.html
 __pycache__/
 *.pyc
 .env
+promo_log.csv

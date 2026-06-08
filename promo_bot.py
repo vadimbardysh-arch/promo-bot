@@ -20,11 +20,101 @@ import csv
 import argparse
 import sys
 import io
+import os
+from datetime import datetime
 from collections import defaultdict
 from playwright.async_api import async_playwright
 
 ADMIN_PANEL_BASE_URL = "https://admin-panel.bolt.eu/delivery-provider/providerPortalAccounts"
 FOOD_PARTNER_LOGIN_URL = "https://foodpartner.bolt.eu/login"
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_CSV = os.path.join(SCRIPT_DIR, "promo_log.csv")
+REPORTS_DIR = os.path.join(SCRIPT_DIR, "reports")
+
+LOG_COLUMNS = ["date", "time", "command", "operator", "venue", "status", "cohorts", "promo_dates", "reason"]
+
+
+def save_log_csv(command: str, operator: str, report: list[dict], promo_dates: str = ""):
+    """Append run results to cumulative promo_log.csv."""
+    write_header = not os.path.exists(LOG_CSV)
+    with open(LOG_CSV, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=LOG_COLUMNS)
+        if write_header:
+            writer.writeheader()
+        now = datetime.now()
+        for r in report:
+            cohorts = r.get("cohorts", [])
+            if isinstance(cohorts, list):
+                cohorts = ", ".join(cohorts)
+            reason_text = r.get("reason", "")
+            if "Cohorts:" in reason_text and not cohorts:
+                parts = reason_text.split("|")
+                for p in parts:
+                    if "Cohorts:" in p:
+                        cohorts = p.replace("Cohorts:", "").strip()
+                        break
+            writer.writerow({
+                "date": now.strftime("%Y-%m-%d"),
+                "time": now.strftime("%H:%M"),
+                "command": command,
+                "operator": operator,
+                "venue": r.get("venue", ""),
+                "status": r.get("status", ""),
+                "cohorts": cohorts,
+                "promo_dates": promo_dates,
+                "reason": reason_text,
+            })
+    print(f"\n   📋 Log saved to: {LOG_CSV}")
+
+
+def save_report_file(command: str, operator: str, report: list[dict], total_venues: int, extra_info: str = ""):
+    """Save a text report file for this run."""
+    os.makedirs(REPORTS_DIR, exist_ok=True)
+    now = datetime.now()
+    filename = f"{command}_{now.strftime('%Y-%m-%d_%H-%M')}.txt"
+    filepath = os.path.join(REPORTS_DIR, filename)
+
+    lines = []
+    lines.append(f"{'='*60}")
+    lines.append(f"  REPORT — {command}")
+    lines.append(f"  Date: {now.strftime('%Y-%m-%d %H:%M')}")
+    lines.append(f"  Operator: {operator}")
+    if extra_info:
+        lines.append(f"  {extra_info}")
+    lines.append(f"{'='*60}")
+    lines.append(f"  Total venues: {total_venues}")
+
+    statuses = {}
+    for r in report:
+        s = r.get("status", "UNKNOWN")
+        statuses[s] = statuses.get(s, 0) + 1
+    for s, cnt in statuses.items():
+        lines.append(f"  {s}: {cnt}")
+    lines.append(f"{'='*60}")
+    lines.append("")
+
+    for r in report:
+        cohorts = r.get("cohorts", [])
+        if isinstance(cohorts, list):
+            cohorts = ", ".join(cohorts)
+        listings = r.get("listings", [])
+        if isinstance(listings, list):
+            listings = " | ".join(listings)
+
+        lines.append(f"  [{r.get('status', '')}] {r.get('venue', '')}")
+        if cohorts:
+            lines.append(f"    Cohorts: {cohorts}")
+        if listings:
+            lines.append(f"    Listings: {listings}")
+        if r.get("reason"):
+            lines.append(f"    {r['reason']}")
+
+    lines.append(f"\n{'='*60}")
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"   📄 Report saved to: {filepath}")
 
 
 # ---------------------------------------------------------------------------
@@ -613,6 +703,10 @@ async def check_promo(login: str, password: str, venue_filter: str = None):
                 print(f"      Reason: {r['reason']}")
 
         print(f"\n{'='*60}\n")
+
+        save_log_csv("check-promo", login, report)
+        save_report_file("check-promo", login, report, len(venues))
+
         await browser.close()
 
 
@@ -831,6 +925,10 @@ async def check_listing(login: str, password: str, venue_filter: str = None):
                     print(f"      {r}{rec['reason']}{reset}")
 
         print(f"\n{'='*60}\n")
+
+        save_log_csv("check-listing", login, report)
+        save_report_file("check-listing", login, report, len(venues))
+
         await browser.close()
 
 
@@ -1515,6 +1613,11 @@ async def setup_smart_promo(
                 print(f"      Reason: already active or skipped without marking")
 
         print(f"\n{'='*60}\n")
+
+        promo_dates = f"{start_date} — {end_date}" if start_date and end_date else ""
+        save_log_csv("smart-promo", login, report, promo_dates)
+        save_report_file("smart-promo", login, report, len(venues), f"Dates: {promo_dates}" if promo_dates else "")
+
         await browser.close()
 
 
@@ -1709,6 +1812,10 @@ async def end_promo(login: str, password: str, filters: str = None):
                 print(f"      Reason: {r['reason']}")
 
         print(f"\n{'='*60}\n")
+
+        save_log_csv("end-promo", login, report)
+        save_report_file("end-promo", login, report, len(venues))
+
         await browser.close()
 
 
